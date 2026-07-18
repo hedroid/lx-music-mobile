@@ -1,7 +1,10 @@
 import ChoosePath, { type ChoosePathType } from '@/components/common/ChoosePath'
 import { LXM_FILE_EXT_RXP } from '@/config/constant'
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { handleExportList, handleImportList } from './actions'
+import { handleExportFullBackup, handleImportFullBackup } from './actions'
+import { selectManagedFolder } from '@/utils/fs'
+import settingState from '@/store/setting/state'
+import { toast } from '@/utils/tools'
 
 export interface SelectInfo {
   // listInfo: LX.List.MyListInfo
@@ -36,7 +39,7 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
       selectInfoRef.current.action = 'import'
       if (visible) {
         choosePathRef.current?.show({
-          title: global.i18n.t('list_import_part_desc'),
+          title: global.i18n.t('setting_backup_full_restore'),
           dirOnly: false,
           filter: LXM_FILE_EXT_RXP,
         })
@@ -44,7 +47,7 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
         setVisible(true)
         requestAnimationFrame(() => {
           choosePathRef.current?.show({
-            title: global.i18n.t('list_import_part_desc'),
+            title: global.i18n.t('setting_backup_full_restore'),
             dirOnly: false,
             filter: LXM_FILE_EXT_RXP,
           })
@@ -53,9 +56,18 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
     },
     export() {
       selectInfoRef.current.action = 'export'
+      if (settingState.setting['common.useSystemFileSelector']) {
+        void selectManagedFolder(true).then(folder => {
+          if (!folder?.path) return
+          void handleExportFullBackup(folder.path)
+        }).catch((error: any) => {
+          toast(String(error?.message ?? error), 'long', 'top')
+        })
+        return
+      }
       if (visible) {
         choosePathRef.current?.show({
-          title: global.i18n.t('list_export_part_desc'),
+          title: global.i18n.t('setting_backup_full_export'),
           dirOnly: true,
           filter: LXM_FILE_EXT_RXP,
         })
@@ -63,7 +75,7 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
         setVisible(true)
         requestAnimationFrame(() => {
           choosePathRef.current?.show({
-            title: global.i18n.t('list_export_part_desc'),
+            title: global.i18n.t('setting_backup_full_export'),
             dirOnly: true,
             filter: LXM_FILE_EXT_RXP,
           })
@@ -76,10 +88,10 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
   const onConfirmPath = (path: string) => {
     switch (selectInfoRef.current.action) {
       case 'import':
-        handleImportList(path)
+        void handleImportFullBackup(path)
         break
       case 'export':
-        handleExportList(path)
+        void handleExportFullBackup(path)
         break
     }
   }

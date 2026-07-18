@@ -29,6 +29,7 @@ const dislikeListPrefix = storageDataPrefix.dislikeList
 const userApiPrefix = storageDataPrefix.userApi
 const openStoragePathPrefix = storageDataPrefix.openStoragePath
 const selectedManagedFolderPrefix = storageDataPrefix.selectedManagedFolder
+const downloadListKey = storageDataPrefix.downloadList
 
 // const defaultListKey = listPrefix + 'default'
 // const loveListKey = listPrefix + 'love'
@@ -61,9 +62,24 @@ const saveViewPrevStateThrottle = throttle((state) => {
   void saveData(viewPrevStateKey, state)
 }, 1000)
 
-export const getFontSize = async() => (await getData<number>(fontSizeKey) ?? 1)
+export const normalizeFontSize = (size: unknown) => {
+  if (typeof size !== 'number' || !Number.isFinite(size) || size <= 0) return 1
+  return Math.min(Math.max(size, 0.8), 1.2)
+}
+
+export const getFontSize = async() => {
+  const storedSize = await getData<number>(fontSizeKey)
+  const size = normalizeFontSize(storedSize)
+  if (storedSize !== size) await saveData(fontSizeKey, size)
+  return size
+}
 export const saveFontSize = async(size: number) => {
-  await saveData(fontSizeKey, size)
+  await saveData(fontSizeKey, normalizeFontSize(size))
+}
+
+export const getDownloadList = async() => (await getData<LX.Download.ListItem[]>(downloadListKey)) ?? []
+export const saveDownloadList = async(list: LX.Download.ListItem[]) => {
+  await saveData(downloadListKey, list)
 }
 
 export const getUserTheme = async() => (await getData<LX.Theme[]>(themeKey) ?? [])
@@ -513,6 +529,17 @@ export const getUserApiList = async(): Promise<LX.UserApi.UserApiInfo[]> => {
 export const getUserApiScript = async(id: string): Promise<string> => {
   const script = await getData<string>(`${userApiPrefix}${id}`) ?? ''
   return script
+}
+
+export const replaceUserApiList = async(items: Array<{ info: LX.UserApi.UserApiInfo, script: string }>) => {
+  const oldScriptKeys = (await getAllKeys()).filter(key => key.startsWith(userApiPrefix) && key != userApiPrefix)
+  await removeDataMultiple(oldScriptKeys)
+  userApis = items.map(item => ({ ...item.info }))
+  await saveDataMultiple([
+    [userApiPrefix, userApis],
+    ...items.map(item => [`${userApiPrefix}${item.info.id}`, item.script] as [string, string]),
+  ])
+  return [...userApis]
 }
 
 const INFO_NAMES = {

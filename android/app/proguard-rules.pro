@@ -12,6 +12,10 @@
 -keep class com.reactnativenavigation.views.element.animators.** { *; }
 # -keepclassmembers class com.reactnativenavigation.views.element.animators.** { *; }
 
+# React Native's Fabric modal component resolves these classes by their fully
+# qualified names at runtime. R8 must not rename or remove them in release APKs.
+-keep class com.facebook.react.views.modal.** { *; }
+
 
 -keep class org.jaudiotagger.tag.** { *; }
 

@@ -1,9 +1,12 @@
 import { updateSetting } from '@/core/common'
 import { setDesktopLyricColor } from '@/core/desktopLyric'
 import { useI18n } from '@/lang'
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { StyleSheet, View, TouchableOpacity } from 'react-native'
 
+import { IconMaterialCommunityIcons } from '@/components/common/Icon'
+import { useSettingValue } from '@/store/setting/hook'
+import { useTheme } from '@/store/theme/hook'
 import SubTitle from '../../components/SubTitle'
 
 const themes = [
@@ -19,14 +22,53 @@ const themes = [
 ] as const
 type Theme = typeof themes[number]
 
-const ThemeItem = ({ color, change }: {
+const parseColor = (color: string): [number, number, number] | null => {
+  const hex = color.match(/^#([\da-f]{6})$/i)?.[1]
+  if (hex) return [Number.parseInt(hex.slice(0, 2), 16), Number.parseInt(hex.slice(2, 4), 16), Number.parseInt(hex.slice(4, 6), 16)]
+  const rgb = color.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null
+}
+
+const getActiveIndex = (currentColor: string) => {
+  const current = parseColor(currentColor)
+  if (!current) return -1
+  let activeIndex = -1
+  let minDistance = Number.POSITIVE_INFINITY
+  themes.forEach((theme, index) => {
+    const target = parseColor(theme[0])
+    if (!target) return
+    const distance = target.reduce((sum, value, channel) => sum + Math.pow(value - current[channel], 2), 0)
+    if (distance < minDistance) {
+      minDistance = distance
+      activeIndex = index
+    }
+  })
+  return activeIndex
+}
+
+const ThemeItem = ({ color, active, change }: {
   color: Theme
+  active: boolean
   change: (color: Theme) => void
 }) => {
+  const theme = useTheme()
   return (
-    <TouchableOpacity style={styles.item} activeOpacity={0.5} onPress={() => { change(color) }}>
-      <View style={styles.colorContent}>
+    <TouchableOpacity
+      style={styles.item}
+      activeOpacity={0.5}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+      onPress={() => { change(color) }}
+    >
+      <View style={{ ...styles.colorContent, borderColor: active ? theme['c-primary-font'] : theme['c-border-background'] }}>
         <View style={{ ...styles.image, backgroundColor: color[0] }}></View>
+        {active
+          ? (
+              <View style={{ ...styles.selectedBadge, backgroundColor: theme['c-primary-font'] }}>
+                <IconMaterialCommunityIcons name="check" size={11} color={theme['c-content-background']} />
+              </View>
+            )
+          : null}
       </View>
     </TouchableOpacity>
   )
@@ -34,6 +76,8 @@ const ThemeItem = ({ color, change }: {
 
 export default memo(() => {
   const t = useI18n()
+  const currentColor = useSettingValue('desktopLyric.style.lyricPlayedColor')
+  const activeIndex = useMemo(() => getActiveIndex(currentColor), [currentColor])
 
   const setThemeDesktopLyric = (color: Theme) => {
     // const shadowColor = 'rgba(0,0,0,0.6)'
@@ -46,7 +90,7 @@ export default memo(() => {
     <SubTitle title={t('setting_lyric_desktop_theme')}>
       <View style={styles.list}>
         {
-          themes.map((c, i) => <ThemeItem key={i.toString()} color={c} change={setThemeDesktopLyric} />)
+          themes.map((c, i) => <ThemeItem key={i.toString()} color={c} active={i == activeIndex} change={setThemeDesktopLyric} />)
         }
       </View>
     </SubTitle>
@@ -59,24 +103,35 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   item: {
-    marginRight: 15,
+    marginRight: 12,
     marginTop: 5,
     alignItems: 'center',
-    width: 26,
+    width: 36,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   colorContent: {
-    width: 26,
-    height: 26,
-    borderRadius: 4,
-    // borderWidth: 1.6,
+    width: 34,
+    height: 34,
+    borderRadius: 7,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   image: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderRadius: 4,
     elevation: 1,
+  },
+  selectedBadge: {
+    position: 'absolute',
+    right: -6,
+    bottom: -6,
+    width: 17,
+    height: 17,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

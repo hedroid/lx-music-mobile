@@ -120,7 +120,7 @@ const Component = <T extends ItemT<T>>({ onPressBg = noop, ...props }: SearchTip
 }
 
 export default forwardRef(Component) as
-  <T,>(p: SearchTipListProps<T> & { ref?: Ref<SearchTipListType<T>> }) => JSX.Element | null
+  <T,>(p: SearchTipListProps<T> & { ref?: Ref<SearchTipListType<T>> }) => React.ReactElement | null
 
 const styles = StyleSheet.create({
   anima: {

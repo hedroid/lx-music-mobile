@@ -1,7 +1,6 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react'
-import { View } from 'react-native'
+import { TouchableOpacity, View } from 'react-native'
 import { BorderWidths } from '@/theme'
-import ButtonBar from './ActionBar'
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { scaleSizeW } from '@/utils/pixelRatio'
@@ -12,6 +11,10 @@ import Image from '@/components/common/Image'
 import { useListInfo } from './state'
 import { useAnimateOnecNumber } from '@/utils/hooks/useAnimateNumber'
 import { useStatusbarHeight } from '@/store/common/hook'
+import { IconMaterialCommunityIcons } from '@/components/common/Icon'
+import { useMyList } from '@/store/list/hook'
+import { handleToggleCollect } from './listAction'
+import ActionBar, { type SelectionState } from './ActionBar'
 
 const IMAGE_WIDTH = scaleSizeW(70)
 
@@ -38,7 +41,15 @@ const Pic = ({ componentId, playCount, imgUrl }: {
 }) => {
   const [pic, setPic] = useState(imgUrl)
   const [animated, setAnimated] = useState(false)
+  const [collectOverride, setCollectOverride] = useState<boolean | null>(null)
   const info = useListInfo()
+  const lists = useMyList()
+  const storedCollected = lists.some(list => (
+    'sourceListId' in list &&
+    (list.sourceListId == `${info.source}__${info.id}` ||
+      (list.source == info.source && list.sourceListId == info.id))
+  ))
+  const isCollected = collectOverride ?? storedCollected
   useEffect(() => {
     if (animated) setPic(imgUrl)
   }, [imgUrl, animated])
@@ -47,9 +58,24 @@ const Pic = ({ componentId, playCount, imgUrl }: {
     setAnimated(true)
   })
 
+  const toggleCollect = () => {
+    setCollectOverride(!isCollected)
+    void handleToggleCollect(info.id, info.source, info.name)
+      .then(() => { setCollectOverride(null) })
+      .catch(() => { setCollectOverride(null) })
+  }
+
   return (
     <View style={{ ...styles.listItemImg, width: IMAGE_WIDTH, height: IMAGE_WIDTH }}>
       <Image nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_to_${info.id}`} url={pic} style={{ flex: 1, borderRadius: 4 }} />
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={global.i18n.t(isCollected ? 'uncollect_songlist' : 'collect_songlist')}
+        onPress={toggleCollect}
+        style={{ ...styles.collectButton, backgroundColor: isCollected ? '#e53935' : 'rgba(0, 0, 0, 0.55)' }}
+      >
+        <IconMaterialCommunityIcons name={isCollected ? 'heart' : 'heart-outline'} size={18} color="#fff" />
+      </TouchableOpacity>
       {
         playCount && animated ? <CountText count={playCount} /> : null
       }
@@ -59,6 +85,10 @@ const Pic = ({ componentId, playCount, imgUrl }: {
 
 export interface HeaderProps {
   componentId: string
+  selection: SelectionState
+  onSelectAll: (isAll: boolean) => void
+  onDownloadSelected: () => void
+  onCancelSelection: () => void
 }
 
 export interface HeaderType {
@@ -71,7 +101,7 @@ export interface DetailInfo {
   imgUrl?: string
 }
 
-export default forwardRef<HeaderType, HeaderProps>(({ componentId }: { componentId: string }, ref) => {
+export default forwardRef<HeaderType, HeaderProps>(({ componentId, selection, onSelectAll, onDownloadSelected, onCancelSelection }, ref) => {
   const statusBarHeight = useStatusbarHeight()
   const theme = useTheme()
   const info = useListInfo()
@@ -94,7 +124,12 @@ export default forwardRef<HeaderType, HeaderProps>(({ componentId }: { component
           </View>
         </View>
       </View>
-      <ButtonBar />
+      <ActionBar
+        selection={selection}
+        onSelectAll={onSelectAll}
+        onDownloadSelected={onDownloadSelected}
+        onCancelSelection={onCancelSelection}
+      />
       {/* <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flexGrow: 0, flexShrink: 1, paddingTop: 5, paddingRight: 5 }}>
               <Text style={{ fontSize: 12, color: AppColors.normal20 }} numberOfLines={ 1 }>{playCount || '-'}</Text>
@@ -132,6 +167,16 @@ const styles = createStyle({
     //     elevation: 2,
     //   },
     // }),
+  },
+  collectButton: {
+    position: 'absolute',
+    right: 4,
+    top: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   playCount: {
     position: 'absolute',

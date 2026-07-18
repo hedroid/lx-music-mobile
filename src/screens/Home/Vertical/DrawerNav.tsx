@@ -12,6 +12,7 @@ import type { InitState } from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
+import { setSpText } from '@/utils/pixelRatio'
 
 const styles = createStyle({
   container: {
@@ -53,6 +54,9 @@ const styles = createStyle({
   },
   text: {
     paddingLeft: 20,
+    includeFontPadding: true,
+    textAlignVertical: 'center',
+    lineHeight: setSpText(24),
     // fontWeight: '500',
   },
 })
@@ -141,4 +145,3 @@ export default memo(() => {
     </View>
   )
 })
-

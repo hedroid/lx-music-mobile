@@ -40,8 +40,9 @@ const styles = createStyle({
   currentList: {
     flexDirection: 'row',
     paddingRight: 2,
-    height: 40,
+    height: 42,
     alignItems: 'center',
+    paddingBottom: 4,
     borderBottomWidth: BorderWidths.normal,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },

@@ -1,10 +1,12 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { View } from 'react-native'
 import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
 import { clearListDetail, getListDetail, setListDetail, setListDetailInfo } from '@/core/songlist'
 import songlistState from '@/store/songlist/state'
 import { handlePlay } from './listAction'
 import Header, { type HeaderType } from './Header'
 import { useListInfo } from './state'
+import type { SelectionState } from './ActionBar'
 
 export interface MusicListProps {
   componentId: string
@@ -19,6 +21,7 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
   const headerRef = useRef<HeaderType>(null)
   const isUnmountedRef = useRef(false)
   const info = useListInfo()
+  const [selection, setSelection] = useState<SelectionState>({ active: false, count: 0, isAll: false })
 
   useImperativeHandle(ref, () => ({
     async loadList(source, id) {
@@ -109,16 +112,36 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
     })
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const header = useMemo(() => <Header ref={headerRef} componentId={componentId} />, [])
+  const handleSelectAll = useCallback((isAll: boolean) => {
+    listRef.current?.selectAll(isAll)
+  }, [])
+  const handleDownloadSelected = useCallback(() => {
+    listRef.current?.downloadSelected()
+  }, [])
+  const handleCancelSelection = useCallback(() => {
+    listRef.current?.exitSelectMode()
+  }, [])
 
-  return <OnlineList
-    ref={listRef}
-    onPlayList={handlePlayList}
-    onRefresh={handleRefresh}
-    onLoadMore={handleLoadMore}
-    ListHeaderComponent={header}
-    // progressViewOffset={}
-   />
+  return (
+    <View style={{ flex: 1 }}>
+      <Header
+        ref={headerRef}
+        componentId={componentId}
+        selection={selection}
+        onSelectAll={handleSelectAll}
+        onDownloadSelected={handleDownloadSelected}
+        onCancelSelection={handleCancelSelection}
+      />
+      <OnlineList
+        ref={listRef}
+        onPlayList={handlePlayList}
+        onRefresh={handleRefresh}
+        onLoadMore={handleLoadMore}
+        showMultipleModeBar={false}
+        onSelectionModeChange={active => { setSelection(state => ({ ...state, active })) }}
+        onSelectionChange={(selectedList, isAll) => { setSelection(state => ({ ...state, count: selectedList.length, isAll })) }}
+        // progressViewOffset={}
+      />
+    </View>
+  )
 })
-

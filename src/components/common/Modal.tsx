@@ -1,5 +1,5 @@
 // import { createStyle } from '@/utils/tools'
-import { useImperativeHandle, forwardRef, useState, useMemo } from 'react'
+import { useImperativeHandle, forwardRef, useState } from 'react'
 import { Modal, TouchableWithoutFeedback, View, type ModalProps as _ModalProps } from 'react-native'
 import { useStatusbarHeight } from '@/store/common/hook'
 // import { useWindowSize } from '@/utils/hooks'
@@ -77,7 +77,7 @@ export default forwardRef<ModalType, ModalProps>(({
     },
   }))
 
-  const memoChildren = useMemo(() => children, [children])
+  const memoChildren = children
 
   return (
     <Modal

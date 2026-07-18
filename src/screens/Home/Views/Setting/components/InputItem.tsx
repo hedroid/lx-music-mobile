@@ -11,9 +11,10 @@ export interface InputItemProps extends InputProps {
   value: string
   label: string
   onChanged: (text: string, callback: (vlaue: string) => void) => void
+  inline?: boolean
 }
 
-export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
+export default memo(({ value, label, onChanged, inline = false, ...props }: InputItemProps) => {
   const [text, setText] = useState(value)
   const textRef = useRef(value)
   const isMountRef = useRef(false)
@@ -62,13 +63,13 @@ export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
     textRef.current = text
   }
   return (
-    <View style={styles.container}>
-      <Text style={styles.label} size={14}>{label}</Text>
+    <View style={inline ? { ...styles.container, ...styles.inlineContainer } : styles.container}>
+      <Text style={inline ? { ...styles.label, ...styles.inlineLabel } : styles.label} size={14} numberOfLines={inline ? 1 : undefined}>{label}</Text>
       <Input
         value={text}
         ref={inputRef}
         onChangeText={handleSetSelectMode}
-        style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
+        style={{ ...styles.input, ...(inline ? styles.inlineInput : {}), backgroundColor: theme['c-primary-input-background'] }}
         {...props}
         onBlur={saveValue}
        />
@@ -92,5 +93,19 @@ const styles = StyleSheet.create({
     // paddingTop: 3,
     // paddingBottom: 3,
     maxWidth: 300,
+  },
+  inlineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inlineLabel: {
+    flexShrink: 1,
+    marginRight: 10,
+    marginBottom: 0,
+  },
+  inlineInput: {
+    width: 92,
+    flexGrow: 0,
+    flexShrink: 0,
   },
 })

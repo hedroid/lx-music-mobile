@@ -1,66 +1,98 @@
-<p align="center"><a href="https://github.com/lyswhut/lx-music-mobile"><img width="200" src="https://github.com/lyswhut/lx-music-mobile/blob/master/doc/images/icon.png" alt="lx-music logo"></a></p>
+<p align="center"><a href="https://github.com/hedroid/lx-music-mobile"><img width="160" src="doc/images/icon.png" alt="LX Music logo"></a></p>
 
-<h1 align="center">LX Music 移动版</h1>
+<h1 align="center">LX Music 移动加强版</h1>
 
 <p align="center">
-  <a href="https://github.com/lyswhut/lx-music-mobile/releases"><img src="https://img.shields.io/github/release/lyswhut/lx-music-mobile" alt="Release version"></a>
-  <a href="https://github.com/lyswhut/lx-music-mobile/actions/workflows/release.yml"><img src="https://github.com/lyswhut/lx-music-mobile/workflows/Build/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/lyswhut/lx-music-mobile/actions/workflows/beta-pack.yml"><img src="https://github.com/lyswhut/lx-music-mobile/workflows/Build%20Beta/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/lyswhut/lx-music-mobile/react-native/master" alt="React native version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-mobile/releases"><img src="https://img.shields.io/github/downloads/lyswhut/lx-music-mobile/latest/total" alt="Downloads"></a> -->
-  <a href="https://github.com/lyswhut/lx-music-mobile/tree/dev"><img src="https://img.shields.io/github/package-json/v/lyswhut/lx-music-mobile/dev" alt="Dev branch version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-mobile/blob/master/LICENSE"><img src="https://img.shields.io/github/license/lyswhut/lx-music-mobile" alt="License"></a> -->
+  <a href="https://github.com/hedroid/lx-music-mobile/releases"><img src="https://img.shields.io/github/v/release/hedroid/lx-music-mobile" alt="Release version"></a>
+  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/hedroid/lx-music-mobile/react-native" alt="React Native version"></a>
+  <a href="https://github.com/hedroid/lx-music-mobile/releases"><img src="https://img.shields.io/github/downloads/hedroid/lx-music-mobile/total" alt="Downloads"></a>
 </p>
 
-<p align="center">一个基于 React Native 开发的音乐软件</p>
+<p align="center">在 LX Music 移动版基础上做加法：补齐下载、备份和播放队列，并持续优化 Android 体验。</p>
 
-## 说明
+本项目修改自落雪无痕开发的 [LX Music 移动版](https://github.com/lyswhut/lx-music-mobile)，保留上游已有功能；当前版本暂不包含网易云账号登录，重点增强日常使用中缺少的下载、备份和交互功能。
 
-所用技术栈：
+- 本仓库：<https://github.com/hedroid/lx-music-mobile>
+- Release 下载：<https://github.com/hedroid/lx-music-mobile/releases>
+- 原仓库（上游）：<https://github.com/lyswhut/lx-music-mobile>
 
-- React Native
-- Redux
+## 本版主要增强
 
-已支持的平台：
+### 下载与本地播放
 
-- Android 5 及以上
+- 歌曲菜单、播放详情页和歌单批量选择均可直接下载。
+- 增加独立的下载管理页面，区分正在下载和已下载任务，支持失败重试、取消与删除。
+- 支持下载音质、保存路径、文件命名、歌词及封面写入，并可按歌手/专辑自动建立目录。
+- 支持 1–50 个并行下载任务；遇到已下载歌曲时可选择跳过或重新下载。
+- 已下载歌曲优先从本地文件播放；移除记录时可选择是否同时删除本地文件。
 
-***注：目前没有计划支持 iOS 和 HarmonyOS NEXT**。*<br>
-*桌面版项目地址：<https://github.com/lyswhut/lx-music-desktop>*<br>
-*LX Music 项目发展调整与新项目计划：https://github.com/lyswhut/lx-music-desktop/issues/1912*
+### 播放队列
 
-软件变化请查看[更新日志](https://github.com/lyswhut/lx-music-mobile/blob/master/CHANGELOG.md)。
+- 播放栏上滑即可打开当前播放队列，下滑关闭。
+- 支持拖动调整顺序、清空队列和一键移除歌曲。
+- 当前歌曲具有明确的播放状态，队列条目的封面与歌曲信息展示保持一致。
 
-软件下载请查看 [GitHub Releases](https://github.com/lyswhut/lx-music-mobile/releases)。
+### 备份与恢复
 
-使用常见问题请参阅[移动版常见问题](https://lyswhut.github.io/lx-music-doc/mobile/faq)。
+- 本地备份和 WebDAV 云端备份使用同一套完整数据格式。
+- 可备份与恢复歌单、自定义音源、应用设置和屏蔽规则。
+- WebDAV 支持连接测试、立即备份和云端恢复，默认兼容坚果云地址。
 
-目前本项目的原始发布地址只有 [**GitHub**](https://github.com/lyswhut/lx-music-mobile/releases)，其他渠道均为第三方转载发布，与本项目无关！
+### 歌单与列表体验
 
-为了提高使用门槛，本软件内的默认设置、UI 操作不以新手友好为目标，所以使用前建议先根据你的喜好浏览调整一遍软件设置，阅读一遍[音乐播放列表机制](https://lyswhut.github.io/lx-music-doc/mobile/faq/playlist)。
+- 歌单可显示歌曲专辑封面，并对图片缓存和滚动加载进行优化。
+- 支持长按进入多选、全选和批量下载，收藏状态直接显示在歌单封面上。
+- 统一搜索、歌单和排行榜的音源选择及顶部操作栏样式。
+- 修复部分网易云歌单、排行榜和歌曲详情解析异常。
 
-### 数据同步服务
+### Android 与界面适配
 
-从 v1.0.0 起，我们发布了一个独立的[数据同步服务](https://github.com/lyswhut/lx-music-sync-server#readme)。如果你有服务器，可以将其部署到服务器上作为私人多端同步服务使用，详情看该项目说明。
+- 应用 ID 为 `com.github.toside.music`，可与原版同时安装。
+- 最低支持 Android 11，目标 Android 16，并适配 16KB 内存页设备。
+- 升级 React Native、Navigation、Android SDK、NDK 和 Gradle，保持 React Native 新架构启用。
+- 调整系统安全区、播放器位置、弹窗手势、中文/英文及多档字体大小下的对齐与换行。
+- 使用扁平化自适应图标，统一按钮、复选框、滑杆、菜单和顶部标签的视觉细节。
+
+完整版本变化可查看 [CHANGELOG.md](CHANGELOG.md)。
+
+## 应用截图
+
+<p align="center">
+  <img src="doc/images/screenshots/navigation.png" width="31%" alt="导航菜单">
+  <img src="doc/images/screenshots/download-manager.png" width="31%" alt="下载管理">
+  <img src="doc/images/screenshots/settings.png" width="31%" alt="设置与外观">
+</p>
+
+<p align="center"><sub>导航菜单 · 下载管理 · 设置与外观</sub></p>
+
+## 安装与要求
+
+- 支持 Android 11 及以上版本。
+- 推荐从本仓库的 [GitHub Releases](https://github.com/hedroid/lx-music-mobile/releases) 下载 APK。
+- 其他渠道的安装包可能并非由本仓库构建，请注意核对应用 ID 和版本号。
+
+目前没有计划支持 iOS 和 HarmonyOS NEXT。
+
+## 项目关系与文档
+
+技术栈：React Native + Redux。
+
+- 上游移动版：<https://github.com/lyswhut/lx-music-mobile>
+- 上游桌面版：<https://github.com/lyswhut/lx-music-desktop>
+- 移动版常见问题：<https://lyswhut.github.io/lx-music-doc/mobile/faq>
+- 音乐播放列表机制：<https://lyswhut.github.io/lx-music-doc/mobile/faq/playlist>
+
+## TODO
+
+- [ ] 支持连接 OneDrive，同步与备份应用数据
+- [ ] 增加网易云账号登录，并支持登录状态与 Cookie 安全管理
+- [ ] 支持收藏歌手
+- [ ] 增加歌手详情页
+- [ ] 支持通知栏灵动岛歌词显示
 
 ## 贡献代码
 
-本项目欢迎 PR，但为了 PR 能顺利合并，需要注意以下几点：
-
-- 对于添加新功能的 PR，建议在提交 PR 前先创建 Issue 进行说明，以确认该功能是否确实需要；
-- 对于修复 bug 的 PR，请提供修复前后的说明及重现方式；
-- 对于其他类型的 PR，则适当附上说明。
-
-贡献代码步骤：
-
-1. 参照[源码使用方法](https://lyswhut.github.io/lx-music-doc/mobile/use-source-code)设置开发环境；
-2. 克隆本仓库代码并切换至 `dev` 分支进行开发；
-3. 提交 PR 至 `dev` 分支。
-
-<!--
-## 用户界面
-
-<p><img width="100%" src="https://github.com/lyswhut/lx-music-mobile/blob/master/doc/images/app.png" alt="lx-music mobile UI"></p> -->
+欢迎提交 Issue 和 PR。修复问题时请附复现步骤；增加功能时请说明使用场景和交互方式。开发环境可参考上游的[源码使用方法](https://lyswhut.github.io/lx-music-doc/mobile/use-source-code)，开发分支使用 `dev`。
 
 ## 项目协议
 

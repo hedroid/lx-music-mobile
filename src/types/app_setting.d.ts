@@ -332,6 +332,11 @@ declare global {
       'list.isShowAlbumName': boolean
 
       /**
+       * 是否在歌曲列表中显示专辑封面
+       */
+      'list.isShowCover': boolean
+
+      /**
        * 是否显示歌曲时长
        */
       'list.isShowInterval': boolean
@@ -351,11 +356,48 @@ declare global {
        */
       'download.fileName': '歌名 - 歌手' | '歌手 - 歌名' | '歌名'
 
+      /** 同时执行的下载任务数 */
+      'download.concurrentCount': number
+
+      /** 下载保存目录，留空时使用应用默认目录 */
+      'download.savePath': string
+
+      /** 是否按第一位歌手名自动创建下载文件夹 */
+      'download.createArtistFolder': boolean
+
+      /** 是否按专辑名自动创建下载文件夹 */
+      'download.createAlbumFolder': boolean
+
+      /** 是否写入歌曲标题、歌手和专辑信息 */
+      'download.writeMetadata': boolean
+
+      /** 是否写入专辑封面 */
+      'download.writePicture': boolean
+
+      /** 是否保存独立歌词文件 */
+      'download.writeLyric': boolean
+
+      /** 是否将歌词写入音乐文件 */
+      'download.writeEmbedLyric': boolean
+
+      /** 保存歌词时是否包含罗马音 */
+      'download.writeRomaLyric': boolean
+
       /**
        * 是否启用同步
        */
       'sync.enable': boolean
+
+      /** WebDAV 服务器地址 */
+      'sync.webdav.enable': boolean
+      /** WebDAV 服务器地址 */
+      'sync.webdav.url': string
+      /** WebDAV 用户名 */
+      'sync.webdav.username': string
+      /** WebDAV 密码 */
+      'sync.webdav.password': string
+      /** WebDAV 备份文件名（固定保存在 lx-music 目录） */
+      'sync.webdav.path': string
     }
   }
 }
-

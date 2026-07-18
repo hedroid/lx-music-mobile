@@ -1,8 +1,9 @@
 import { useRef, useImperativeHandle, forwardRef, useState, useCallback, memo, useEffect } from 'react'
 import Text from '@/components/common/Text'
+import TopTabButton from '@/components/common/TopTabButton'
 import { createStyle } from '@/utils/tools'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
-import { FlatList, ScrollView, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
+import { FlatList, ScrollView, View, type FlatListProps as _FlatListProps } from 'react-native'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
@@ -13,7 +14,7 @@ import { useSourceListI18n } from '@/components/SourceSelector'
 import { searchMusic } from '@/utils/musicSdk'
 import { toNewMusicInfo } from '@/utils'
 import { handleShowMusicSourceDetail, handleToggleSource } from './listAction'
-import { BorderRadius, BorderWidths } from '@/theme'
+import { BorderRadius } from '@/theme'
 import playerState from '@/store/player/state'
 import { LIST_IDS } from '@/config/constant'
 import { addTempPlayList } from '@/core/player/tempPlayList'
@@ -29,22 +30,19 @@ const Tabs = <T extends LX.OnlineSource>({ list, source, onChangeSource }: {
   onChangeSource: (source: T) => void
 }) => {
   const list_t = useSourceListI18n(list)
-  const theme = useTheme()
   const scrollViewRef = useRef<ScrollView>(null)
 
   return (
     <ScrollView ref={scrollViewRef} style={styles.tabContainer} keyboardShouldPersistTaps={'always'} horizontal>
       {
         list_t.map(s => (
-          <TouchableOpacity
-            style={{ ...styles.tabButton, borderBottomColor: source == s.action ? theme['c-primary-background-active'] : 'transparent' }}
-            onPress={() => {
-              onChangeSource(s.action as T)
-            }}
+          <TopTabButton
             key={s.action}
-          >
-            <Text style={styles.tabButtonText} color={source == s.action ? theme['c-primary-font-active'] : theme['c-font']}>{s.label}</Text>
-          </TouchableOpacity>
+            label={s.label}
+            active={source == s.action}
+            onPress={() => { onChangeSource(s.action as T) }}
+            horizontalPadding={6}
+          />
         ))
       }
     </ScrollView>
@@ -416,25 +414,7 @@ const styles = createStyle({
   tabContainer: {
     flexGrow: 0,
     flexShrink: 0,
-    // paddingLeft: 5,
-    // paddingRight: 5,
-    paddingVertical: 6,
-  },
-  tabButton: {
-    // height: 38,
-    // lineHeight: 38,
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    // width: 80,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-    borderBottomWidth: BorderWidths.normal3,
-  },
-  tabButtonText: {
-    // height: 38,
-    // lineHeight: 38,
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 5,
+    height: 42,
   },
   list: {
     flexGrow: 1,
@@ -535,5 +515,3 @@ const styles = createStyle({
     alignItems: 'center',
   },
 })
-
-

@@ -1,22 +1,41 @@
 import { LIST_IDS } from '@/config/constant'
-import { createList, getListMusics, overwriteList, overwriteListFull, overwriteListMusics } from '@/core/list'
+import { createList, overwriteList, overwriteListFull, overwriteListMusics } from '@/core/list'
 import { filterMusicList, fixNewMusicInfoQuality, toNewMusicInfo } from '@/utils'
 import { log } from '@/utils/log'
 import { confirmDialog, handleReadFile, handleSaveFile, showImportTip, toast } from '@/utils/tools'
 import listState from '@/store/list/state'
+import { createFullBackup, getAllLists, importListBackup, isFullBackup, restoreFullBackup } from '@/core/backup'
 
-
-const getAllLists = async() => {
-  const lists = []
-  lists.push(await getListMusics(listState.defaultList.id).then(musics => ({ ...listState.defaultList, list: musics })))
-  lists.push(await getListMusics(listState.loveList.id).then(musics => ({ ...listState.loveList, list: musics })))
-
-  for await (const list of listState.userList) {
-    lists.push(await getListMusics(list.id).then(musics => ({ ...list, list: musics })))
+export const handleExportFullBackup = async(path: string) => {
+  toast(global.i18n.t('setting_backup_full_export_running'), 'short', 'top')
+  try {
+    await handleSaveFile(`${path}/lx_full_backup.lxmc`, await createFullBackup())
+    toast(global.i18n.t('setting_backup_full_export_success'), 'short', 'top')
+  } catch (error: any) {
+    log.error(error.stack ?? error.message)
+    toast(`${global.i18n.t('setting_backup_full_export_failed')}: ${String(error?.message ?? error)}`, 'long', 'top')
   }
-
-  return lists
 }
+
+export const handleImportFullBackup = async(path: string) => {
+  try {
+    const data: unknown = await handleReadFile(path)
+    if (!isFullBackup(data)) throw new Error(global.i18n.t('setting_backup_full_invalid'))
+    const confirmed = await confirmDialog({
+      message: global.i18n.t('setting_backup_full_restore_confirm'),
+      cancelButtonText: global.i18n.t('dialog_cancel'),
+      confirmButtonText: global.i18n.t('dialog_confirm'),
+      bgClose: false,
+    })
+    if (!confirmed) return
+    await restoreFullBackup(data)
+    toast(global.i18n.t('setting_backup_full_restore_success'), 'short', 'top')
+  } catch (error: any) {
+    log.error(error.stack ?? error.message)
+    toast(`${global.i18n.t('setting_backup_full_restore_failed')}: ${String(error?.message ?? error)}`, 'long', 'top')
+  }
+}
+
 const importOldListData = async(lists: any[]) => {
   const allLists = await getAllLists()
   for (const list of lists) {
@@ -43,33 +62,6 @@ const importOldListData = async(lists: any[]) => {
   const loveList = allLists.shift()!.list
   await overwriteListFull({ defaultList, loveList, userList: allLists as LX.List.UserListInfoFull[] })
 }
-const importNewListData = async(lists: Array<LX.List.MyDefaultListInfoFull | LX.List.MyLoveListInfoFull | LX.List.UserListInfoFull>) => {
-  const allLists = await getAllLists()
-  for (const list of lists) {
-    try {
-      const targetList = allLists.find(l => l.id == list.id)
-      if (targetList) {
-        targetList.list = filterMusicList(list.list).map(m => fixNewMusicInfoQuality(m))
-      } else {
-        const data = {
-          name: list.name,
-          id: list.id,
-          list: filterMusicList(list.list).map(m => fixNewMusicInfoQuality(m)),
-          source: (list as LX.List.UserListInfoFull).source,
-          sourceListId: (list as LX.List.UserListInfoFull).sourceListId,
-          locationUpdateTime: (list as LX.List.UserListInfoFull).locationUpdateTime ?? null,
-        }
-        allLists.push(data as LX.List.UserListInfoFull)
-      }
-    } catch (err) {
-      console.log(err)
-    }
-  }
-  const defaultList = allLists.shift()!.list
-  const loveList = allLists.shift()!.list
-  await overwriteListFull({ defaultList, loveList, userList: allLists as LX.List.UserListInfoFull[] })
-}
-
 /**
  * 导入单个列表
  * @param listData
@@ -143,7 +135,7 @@ const importPlayList = async(path: string) => {
     case 'playList_v2':
       if (!await showConfirm()) return true
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await importNewListData(configData.data)
+      await importListBackup(configData.data)
       break
     case 'allData':
       if (!await showConfirm()) return true
@@ -155,7 +147,7 @@ const importPlayList = async(path: string) => {
     case 'allData_v2':
       if (!await showConfirm()) return true
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await importNewListData(configData.playList)
+      await importListBackup(configData.playList)
       break
     case 'playListPart':
       configData.data.list = filterMusicList((configData.data as LX.ConfigFile.MyListInfoPart['data']).list.map(m => toNewMusicInfo(m)))

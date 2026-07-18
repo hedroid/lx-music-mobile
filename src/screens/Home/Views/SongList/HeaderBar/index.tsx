@@ -15,7 +15,8 @@ import { type Source } from '@/store/songlist/state'
 // import { useTheme } from '@/store/theme/hook'
 import Tag, { type TagType, type TagProps } from './Tag'
 import OpenList, { type OpenListType } from './OpenList'
-// import { BorderWidths } from '@/theme'
+import { BorderWidths } from '@/theme'
+import { useTheme } from '@/store/theme/hook'
 
 export interface HeaderBarProps {
   onSortChange: SortTabProps['onSortChange']
@@ -33,7 +34,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onTagC
   const tagRef = useRef<TagType>(null)
   const openListRef = useRef<OpenListType>(null)
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
-  // const theme = useTheme()
+  const theme = useTheme()
 
   useImperativeHandle(ref, () => ({
     setSource(source, sortId, tagName, tagId) {
@@ -46,7 +47,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onTagC
 
 
   return (
-    <View style={styles.searchBar}>
+    <View style={{ ...styles.searchBar, borderBottomColor: theme['c-border-background'] }}>
       <SortTab ref={sortTabRef} onSortChange={onSortChange} />
       <Tag ref={tagRef} onTagChange={onTagChange} />
       <OpenList ref={openListRef} />
@@ -58,10 +59,10 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onTagC
 const styles = createStyle({
   searchBar: {
     flexDirection: 'row',
-    height: 38,
+    height: 42,
     zIndex: 2,
     // paddingRight: 10,
-    // borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: BorderWidths.normal,
   },
   selector: {
     width: 86,

@@ -1,11 +1,9 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import { ScrollView } from 'react-native'
 import songlistState, { type SortInfo, type Source } from '@/store/songlist/state'
 import { useI18n } from '@/lang'
-import { useTheme } from '@/store/theme/hook'
-import Text from '@/components/common/Text'
+import TopTabButton from '@/components/common/TopTabButton'
 import { createStyle } from '@/utils/tools'
-import { BorderWidths } from '@/theme'
 
 export interface SortTabProps {
   onSortChange: (id: string) => void
@@ -20,7 +18,6 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
   const [sortList, setSortList] = useState<SortInfo[]>([])
   const [activeId, setActiveId] = useState<SortInfo['id']>('')
   const t = useI18n()
-  const theme = useTheme()
   const scrollViewRef = useRef<ScrollView>(null)
 
   useImperativeHandle(ref, () => ({
@@ -44,9 +41,13 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
     <ScrollView ref={scrollViewRef} style={styles.container} keyboardShouldPersistTaps={'always'} horizontal>
       {
         sorts.map(s => (
-          <TouchableOpacity style={styles.button} onPress={() => { handleSortChange(s.id) }} key={s.id}>
-            <Text style={{ ...styles.buttonText, borderBottomColor: activeId == s.id ? theme['c-primary-background-active'] : 'transparent' }} color={activeId == s.id ? theme['c-primary-font-active'] : theme['c-font']}>{s.label}</Text>
-          </TouchableOpacity>
+          <TopTabButton
+            key={s.id}
+            label={s.label}
+            active={activeId == s.id}
+            onPress={() => { handleSortChange(s.id) }}
+            horizontalPadding={14}
+          />
         ))
       }
     </ScrollView>
@@ -60,22 +61,5 @@ const styles = createStyle({
     flexShrink: 1,
     // paddingLeft: 5,
     // paddingRight: 5,
-  },
-  button: {
-    // height: 38,
-    // lineHeight: 38,
-    justifyContent: 'center',
-    paddingLeft: 14,
-    paddingRight: 14,
-    // width: 80,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  buttonText: {
-    // height: 38,
-    // lineHeight: 38,
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 3,
-    borderBottomWidth: BorderWidths.normal3,
   },
 })

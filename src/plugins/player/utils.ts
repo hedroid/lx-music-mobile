@@ -1,4 +1,4 @@
-import TrackPlayer, { Capability, Event, RepeatMode, State } from 'react-native-track-player'
+import TrackPlayer, { Capability, Event, RepeatMode, State, type UpdateOptions } from 'react-native-track-player'
 import BackgroundTimer from 'react-native-background-timer'
 import { playMusic as handlePlayMusic } from './playList'
 import { existsFile, moveFile, privateStorageDirectoryPath, temporaryDirectoryPath } from '@/utils/fs'
@@ -155,8 +155,8 @@ export const setResource = (musicInfo: LX.Player.PlayMusic, url: string, duratio
 }
 
 export const setPlay = async() => TrackPlayer.play()
-export const getPosition = async() => TrackPlayer.getPosition()
-export const getDuration = async() => TrackPlayer.getDuration()
+export const getPosition = async() => (await TrackPlayer.getProgress()).position
+export const getDuration = async() => (await TrackPlayer.getProgress()).duration
 export const setStop = async() => {
   await TrackPlayer.stop()
   if (!isEmpty()) await TrackPlayer.skipToNext()
@@ -176,38 +176,39 @@ export interface NowPlayingTitles {
 }
 export const updateNowPlayingTitles = async(titles: NowPlayingTitles) => {
   console.log('set playing titles', titles)
-  return TrackPlayer.updateNowPlayingTitles(titles)
+  return TrackPlayer.updateNowPlayingMetadata(titles)
 }
 
 export const resetPlay = async() => Promise.all([setPause(), setCurrentTime(0)])
 
-export const isCached = async(url: string) => TrackPlayer.isCached(url)
-export const getCacheSize = async() => TrackPlayer.getCacheSize()
-export const clearCache = async() => TrackPlayer.clearCache()
+// RNTP 5 stores its media cache inside the Android application cache directory.
+// That directory is already measured and cleared by CacheModule, so avoid counting
+// it twice here. RNTP no longer exposes a per-URL cache query.
+export const isCached = async(_url: string) => false
+export const getCacheSize = async() => 0
+export const clearCache = async() => {}
 export const migratePlayerCache = async() => {
-  const newCachePath = privateStorageDirectoryPath + '/TrackPlayer'
-  if (await existsFile(newCachePath)) return
-  const oldCachePath = temporaryDirectoryPath + '/TrackPlayer'
-  if (!await existsFile(oldCachePath)) return
+  const legacyCachePath = privateStorageDirectoryPath + '/TrackPlayer'
+  if (!await existsFile(legacyCachePath)) return
   let timeout: number | null = BackgroundTimer.setTimeout(() => {
     timeout = null
     toast(global.i18n.t('player_cache_migrating'), 'long')
   }, 2_000)
-  await moveFile(oldCachePath, newCachePath).finally(() => {
+  const newCachePath = temporaryDirectoryPath + '/RNTP'
+  await moveFile(legacyCachePath, newCachePath).catch(() => {}).finally(() => {
     if (timeout) BackgroundTimer.clearTimeout(timeout)
   })
 }
 
 export const destroy = async() => {
   if (global.lx.playerStatus.isIniting || !global.lx.playerStatus.isInitialized) return
-  await TrackPlayer.destroy()
-  global.lx.playerStatus.isInitialized = false
+  await TrackPlayer.reset()
 }
 
 type PlayStatus = 'None' | 'Ready' | 'Playing' | 'Paused' | 'Stopped' | 'Buffering' | 'Connecting'
 
 export const onStateChange = async(listener: (state: PlayStatus) => void) => {
-  const sub = TrackPlayer.addEventListener(Event.PlaybackState, state => {
+  const sub = TrackPlayer.addEventListener(Event.PlaybackState, ({ state }) => {
     let _state: PlayStatus
     switch (state) {
       case State.Ready:
@@ -225,7 +226,7 @@ export const onStateChange = async(listener: (state: PlayStatus) => void) => {
       case State.Buffering:
         _state = 'Buffering'
         break
-      case State.Connecting:
+      case State.Loading:
         _state = 'Connecting'
         break
       case State.None:
@@ -248,7 +249,7 @@ export const onStateChange = async(listener: (state: PlayStatus) => void) => {
  */
 // export const playState = callback => TrackPlayer.addEventListener('playback-state', callback)
 
-export const updateOptions = async(options = {
+const defaultUpdateOptions: UpdateOptions = {
   // Whether the player should stop running when the app is closed on Android
   // stopWithApp: true,
 
@@ -272,14 +273,6 @@ export const updateOptions = async(options = {
     Capability.SkipToPrevious,
   ],
 
-  // // An array of capabilities that will show up when the notification is in the compact form on Android
-  compactCapabilities: [
-    Capability.Play,
-    Capability.Pause,
-    Capability.Stop,
-    Capability.SkipToNext,
-  ],
-
   // Icons for the notification on Android (if you don't like the default ones)
   // playIcon: require('./play-icon.png'),
   // pauseIcon: require('./pause-icon.png'),
@@ -287,8 +280,17 @@ export const updateOptions = async(options = {
   // previousIcon: require('./previous-icon.png'),
   // nextIcon: require('./next-icon.png'),
   // icon: notificationIcon, // The notification icon
-}) => {
-  return TrackPlayer.updateOptions(options)
+}
+
+export const updateOptions = async(options: UpdateOptions = {}) => {
+  return TrackPlayer.updateOptions({
+    ...defaultUpdateOptions,
+    ...options,
+    android: {
+      ...defaultUpdateOptions.android,
+      ...options.android,
+    },
+  })
 }
 
 // export const setMaxCache = async size => {

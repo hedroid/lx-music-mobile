@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { memo, useRef, type ComponentRef } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 import { LIST_ITEM_HEIGHT } from '@/config/constant'
 // import { BorderWidths } from '@/theme'
@@ -9,11 +9,12 @@ import { useAssertApiSupport } from '@/store/common/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import Text from '@/components/common/Text'
 import Badge from '@/components/common/Badge'
+import MusicCover from '@/components/MusicCover'
 
 export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
 
 
-export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowCover, isShowInterval }: {
   item: LX.Music.MusicInfo
   index: number
   activeIndex: number
@@ -23,6 +24,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   selectedList: LX.Music.MusicInfo[]
   rowInfo: RowInfo
   isShowAlbumName: boolean
+  isShowCover: boolean
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
@@ -30,10 +32,10 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   const isSelected = selectedList.includes(item)
   // console.log(item.name, selectedList, selectedList.includes(item))
   const isSupported = useAssertApiSupport(item.source)
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<ComponentRef<typeof TouchableOpacity>>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((_fx: number, _fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
@@ -46,11 +48,18 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   return (
     <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)', opacity: isSupported ? 1 : 0.5 }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
-        {
-          active
+        {isShowCover
+          ? <View style={styles.coverContent}>
+              <MusicCover musicInfo={item} style={styles.cover} />
+              {active
+                ? <View style={styles.playingMark}>
+                    <Icon name="play-outline" size={11} color="#fff" />
+                  </View>
+                : null}
+            </View>
+          : active
             ? <Icon style={styles.sn} name="play-outline" size={13} color={theme['c-primary-font']} />
-            : <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>
-        }
+            : <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>}
         <View style={styles.itemInfo}>
           {/* <View style={styles.listItemTitle}> */}
           <Text color={active ? theme['c-primary-font'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
@@ -79,6 +88,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
+    prevProps.isShowCover === nextProps.isShowCover &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.activeIndex != nextProps.index &&
     nextProps.activeIndex != nextProps.index &&
@@ -111,6 +121,28 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
     paddingLeft: 3,
     paddingRight: 3,
+  },
+  coverContent: {
+    width: 54,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cover: {
+    width: 42,
+    height: 42,
+    borderRadius: 4,
+  },
+  playingMark: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)',
   },
   itemInfo: {
     flexGrow: 1,

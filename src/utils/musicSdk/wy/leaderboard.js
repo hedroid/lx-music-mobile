@@ -1,4 +1,4 @@
-import { weapi } from './utils/crypto'
+import { linuxapi, weapi } from './utils/crypto'
 import { httpFetch } from '../../request'
 import musicDetailApi from './musicDetail'
 
@@ -116,12 +116,22 @@ export default {
     return this._requestBoardsObj.promise
   },
   getData(id) {
-    const requestBoardsDetailObj = httpFetch('https://music.163.com/weapi/v3/playlist/detail', {
+    const requestBoardsDetailObj = httpFetch('https://music.163.com/api/linux/forward', {
       method: 'post',
-      form: weapi({
-        id,
-        n: 100000,
-        p: 1,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
+        Cookie: 'MUSIC_U=',
+      },
+      credentials: 'omit',
+      cache: 'default',
+      form: linuxapi({
+        method: 'POST',
+        url: 'https://music.163.com/api/v3/playlist/detail',
+        params: {
+          id,
+          n: this.limit,
+          s: 8,
+        },
       }),
     })
     return requestBoardsDetailObj.promise

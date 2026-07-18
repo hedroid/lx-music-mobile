@@ -3,6 +3,7 @@ import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { forwardRef, useImperativeHandle, useState } from 'react'
+import { setSpText } from '@/utils/pixelRatio'
 
 
 export interface CurrentTagBtnProps {
@@ -37,11 +38,15 @@ const styles = createStyle({
     paddingLeft: 15,
     paddingRight: 15,
     justifyContent: 'center',
+    paddingBottom: 4,
   },
   sourceMenu: {
     // height: 38,
     // lineHeight: 38,
     textAlign: 'center',
+    includeFontPadding: true,
+    textAlignVertical: 'center',
+    lineHeight: setSpText(22),
     // minWidth: 70,
     // paddingTop: 10,
     // paddingBottom: 10,

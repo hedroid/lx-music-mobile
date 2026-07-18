@@ -73,7 +73,7 @@ const registerPlaybackService = async() => {
   })
 
   TrackPlayer.addEventListener(TPEvent.RemoteSeek, async({ position }) => {
-    global.app_event.setProgress(position as number)
+    global.app_event.setProgress(position)
   })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackState, async info => {
@@ -98,7 +98,7 @@ const registerPlaybackService = async() => {
         global.app_event.pause()
         global.app_event.playerWaiting()
         break
-      case TPState.Connecting:
+      case TPState.Loading:
         global.app_event.playerLoadstart()
         break
       default:
@@ -110,10 +110,10 @@ const registerPlaybackService = async() => {
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
-  TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, async info => {
-    // console.log('PlaybackTrackChanged====>', info)
+  TrackPlayer.addEventListener(TPEvent.PlaybackActiveTrackChanged, async info => {
+    // console.log('PlaybackActiveTrackChanged====>', info)
     global.lx.playerTrackId = await getCurrentTrackId()
-    if (info.track == null) return
+    if (info.index == null) return
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
 
     // console.log('global.lx.playerTrackId====>', global.lx.playerTrackId)

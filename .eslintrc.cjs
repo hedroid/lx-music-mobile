@@ -77,6 +77,8 @@ module.exports = {
   },
   ignorePatterns: [
     'node_modules',
+    'android/**/build/**',
+    'ios/build/**',
     '*.min.js',
     'test.js',
     '*Test.ts',

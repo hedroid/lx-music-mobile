@@ -3,7 +3,7 @@
 // https://github.com/Binaryify/NeteaseCloudMusicApi/blob/master/module/top_playlist.js
 // https://github.com/Binaryify/NeteaseCloudMusicApi/blob/master/module/playlist_detail.js
 
-import { weapi, linuxapi } from './utils/crypto'
+import { linuxapi } from './utils/crypto'
 import { httpFetch } from '../../request'
 import { formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../index'
 import musicDetailApi from './musicDetail'
@@ -14,6 +14,7 @@ export default {
   _requestObj_tags: null,
   _requestObj_hotTags: null,
   _requestObj_list: null,
+  _listCursors: {},
   limit_list: 30,
   limit_song: 100000,
   successCode: 200,
@@ -209,21 +210,25 @@ export default {
   getList(sortId, tagId, page, tryNum = 0) {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
     if (this._requestObj_list) this._requestObj_list.cancelHttp()
-    this._requestObj_list = httpFetch('https://music.163.com/weapi/playlist/list', {
-      method: 'post',
-      form: weapi({
-        cat: tagId || '全部', // 全部,华语,欧美,日语,韩语,粤语,小语种,流行,摇滚,民谣,电子,舞曲,说唱,轻音乐,爵士,乡村,R&B/Soul,古典,民族,英伦,金属,朋克,蓝调,雷鬼,世界音乐,拉丁,另类/独立,New Age,古风,后摇,Bossa Nova,清晨,夜晚,学习,工作,午休,下午茶,地铁,驾车,运动,旅行,散步,酒吧,怀旧,清新,浪漫,性感,伤感,治愈,放松,孤独,感动,兴奋,快乐,安静,思念,影视原声,ACG,儿童,校园,游戏,70后,80后,90后,网络歌曲,KTV,经典,翻唱,吉他,钢琴,器乐,榜单,00后
-        order: sortId, // hot,new
-        limit: this.limit_list,
-        offset: this.limit_list * (page - 1),
-        total: true,
-      }),
+    const category = tagId || '全部'
+    const cursorKey = `${category}:${page - 1}`
+    const before = page > 1 ? this._listCursors[cursorKey] : 0
+    const requestLimit = before ? this.limit_list : Math.min(this.limit_list * page, 100)
+    const query = `cat=${encodeURIComponent(category)}&limit=${requestLimit}${before ? `&before=${before}` : ''}`
+    this._requestObj_list = httpFetch(`https://music.163.com/api/playlist/highquality/list?${query}`, {
+      headers: {
+        Referer: 'https://music.163.com/discover/playlist/',
+        'User-Agent': 'NeteaseMusic/9.1.40 (Linux; Android 14)',
+      },
     })
     return this._requestObj_list.promise.then(({ body }) => {
-      // console.log(body)
       if (body.code !== this.successCode) return this.getList(sortId, tagId, page, ++tryNum)
+      this._listCursors[`${category}:${page}`] = body.lasttime
+      const list = before
+        ? body.playlists
+        : body.playlists.slice(this.limit_list * (page - 1), this.limit_list * page)
       return {
-        list: this.filterList(body.playlists),
+        list: this.filterList(list),
         total: parseInt(body.total),
         page,
         limit: this.limit_list,
@@ -251,14 +256,18 @@ export default {
   getTag(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
-    this._requestObj_tags = httpFetch('https://music.163.com/weapi/playlist/catalogue', {
-      method: 'post',
-      form: weapi({}),
+    this._requestObj_tags = httpFetch('https://music.163.com/api/playlist/highquality/tags', {
+      headers: {
+        Referer: 'https://music.163.com/discover/playlist/',
+        'User-Agent': 'NeteaseMusic/9.1.40 (Linux; Android 14)',
+      },
     })
     return this._requestObj_tags.promise.then(({ body }) => {
-      // console.log(JSON.stringify(body))
-      if (body.code !== this.successCode) return this.getTag(++tryNum)
-      return this.filterTagInfo(body)
+      if (!Array.isArray(body.tags)) return this.getTag(++tryNum)
+      return this.filterTagInfo({
+        sub: body.tags,
+        categories: { 0: '语种', 1: '风格', 2: '场景', 3: '情感', 4: '主题' },
+      })
     })
   },
   filterTagInfo({ sub, categories }) {
@@ -289,13 +298,15 @@ export default {
   getHotTag(tryNum = 0) {
     if (this._requestObj_hotTags) this._requestObj_hotTags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
-    this._requestObj_hotTags = httpFetch('https://music.163.com/weapi/playlist/hottags', {
-      method: 'post',
-      form: weapi({}),
+    this._requestObj_hotTags = httpFetch('https://music.163.com/api/playlist/hottags', {
+      headers: {
+        Referer: 'https://music.163.com/discover/playlist/',
+        'User-Agent': 'NeteaseMusic/9.1.40 (Linux; Android 14)',
+      },
     })
     return this._requestObj_hotTags.promise.then(({ body }) => {
       // console.log(JSON.stringify(body))
-      if (body.code !== this.successCode) return this.getTag(++tryNum)
+      if (body.code !== this.successCode) return this.getHotTag(++tryNum)
       return this.filterHotTagInfo(body.tags)
     })
   },

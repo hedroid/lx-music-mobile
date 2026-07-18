@@ -58,6 +58,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
+  const isShowCover = useSettingValue('list.isShowCover')
   const isShowInterval = useSettingValue('list.isShowInterval')
   // console.log('render music list')
 
@@ -260,6 +261,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       selectedList={selectedList}
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
+      isShowCover={isShowCover}
       isShowInterval={isShowInterval}
     />
   )
@@ -274,13 +276,13 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       onScroll={handleScroll}
       style={styles.list}
       data={currentList}
-      maxToRenderPerBatch={4}
+      maxToRenderPerBatch={8}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
-      // updateCellsBatchingPeriod={80}
-      windowSize={8}
+      updateCellsBatchingPeriod={32}
+      windowSize={12}
       removeClippedSubviews={true}
-      initialNumToRender={12}
+      initialNumToRender={16}
       renderItem={renderItem}
       keyExtractor={getkey}
       extraData={activeIndex}

@@ -1,146 +1,244 @@
-import { memo } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { memo, useRef } from 'react'
+import { ScrollView, TouchableOpacity, View } from 'react-native'
 
-import Section from '../components/Section'
-// import Button from './components/Button'
-
-import { createStyle, openUrl } from '@/utils/tools'
-// import { showPactModal } from '@/navigation'
-import { useTheme } from '@/store/theme/hook'
-import { useI18n } from '@/lang'
+import { IconMaterialCommunityIcons, type MaterialDesignIconName } from '@/components/common/Icon'
+import Popup, { type PopupType } from '@/components/common/Popup'
 import Text from '@/components/common/Text'
-import { showPactModal } from '@/core/common'
+import { useI18n } from '@/lang'
+import { useTheme } from '@/store/theme/hook'
+import { createStyle, openUrl } from '@/utils/tools'
+import Section from '../components/Section'
+import { setSpText } from '@/utils/pixelRatio'
 
-// const qqGroupUrl = 'mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3Du1zyxek8roQAwic44nOkBXtG9CfbAxFw'
-// const qqGroupUrl2 = 'mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D-l4kNZ2bPQAuvfCQFFhl1UoibvF5wcrQ'
-// const qqGroupWebUrl = 'https://qm.qq.com/cgi-bin/qm/qr?k=jRZkyFSZ4FmUuTHA3P_RAXbbUO_Rrn5e&jump_from=webapi'
-// const qqGroupWebUrl2 = 'https://qm.qq.com/cgi-bin/qm/qr?k=HPNJEfrZpBZ9T8szYWbe2d5JrAAeOt_l&jump_from=webapi'
+const REPOSITORY_URL = 'https://github.com/hedroid/lx-music-mobile'
+const UPSTREAM_URL = 'https://github.com/lyswhut/lx-music-mobile'
+
+const InfoRow = ({ icon, title, description, onPress }: {
+  icon: MaterialDesignIconName
+  title: string
+  description: string
+  onPress: () => void
+}) => {
+  const theme = useTheme()
+
+  return (
+    <TouchableOpacity
+      style={{ ...styles.infoRow, borderBottomColor: theme['c-border-background'] }}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      <View style={{ ...styles.iconBox, backgroundColor: theme['c-primary-background-hover'] }}>
+        <IconMaterialCommunityIcons name={icon} size={21} color={theme['c-primary-font']} />
+      </View>
+      <View style={styles.infoText}>
+        <Text size={14}>{title}</Text>
+        <Text style={styles.description} size={12} color={theme['c-font-label']}>
+          {description}
+        </Text>
+      </View>
+      <IconMaterialCommunityIcons name="chevron-right" size={22} color={theme['c-250']} />
+    </TouchableOpacity>
+  )
+}
+
+const PolicyPart = ({ title, children }: { title: string, children: string }) => {
+  const theme = useTheme()
+  return (
+    <View style={styles.policyPart}>
+      <Text style={styles.policyTitle} size={15}>{title}</Text>
+      <Text style={styles.policyText} size={13} color={theme['c-font-label']}>{children}</Text>
+    </View>
+  )
+}
+
+const PolicyPopup = ({ popupRef, title, children }: {
+  popupRef: React.RefObject<PopupType | null>
+  title: string
+  children: React.ReactNode
+}) => (
+  <Popup ref={popupRef} title={title} position="bottom" closeBtn={false} swipeToClose>
+    <ScrollView
+      style={styles.popupScroll}
+      contentContainerStyle={styles.popupContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  </Popup>
+)
 
 export default memo(() => {
   const theme = useTheme()
   const t = useI18n()
-  const openHomePage = () => {
-    void openUrl('https://github.com/lyswhut/lx-music-mobile#readme')
-  }
-  const openIssuePage = () => {
-    void openUrl('https://github.com/lyswhut/lx-music-mobile/issues?q=is%3Aissue+')
-  }
-  const openGHReleasePage = () => {
-    void openUrl('https://github.com/lyswhut/lx-music-mobile/releases')
-  }
-  const openFAQPage = () => {
-    void openUrl('https://lyswhut.github.io/lx-music-doc/mobile/faq')
-  }
-  // const openIssuesPage = () => {
-  //   openUrl('https://github.com/lyswhut/lx-music-mobile/issues')
-  // }
-  const openPactModal = () => {
-    showPactModal()
-  }
-  const openPartPage = () => {
-    void openUrl('https://github.com/lyswhut/lx-music-mobile#%E9%A1%B9%E7%9B%AE%E5%8D%8F%E8%AE%AE')
-  }
-
-  // const goToQQGroup = () => {
-  //   openUrl(qqGroupUrl).catch(() => {
-  //     void openUrl(qqGroupWebUrl)
-  //   })
-  // }
-  // const goToQQGroup2 = () => {
-  //   openUrl(qqGroupUrl2).catch(() => {
-  //     void openUrl(qqGroupWebUrl2)
-  //   })
-  // }
-
-  const textLinkStyle = {
-    ...styles.text,
-    textDecorationLine: 'underline',
-    color: theme['c-primary-font'],
-    // fontSize: 14,
-  } as const
-
+  const privacyRef = useRef<PopupType>(null)
+  const licenseRef = useRef<PopupType>(null)
 
   return (
     <Section title={t('setting_about')}>
-      <View style={styles.part}>
-        <Text style={styles.text} >本软件完全免费，代码已开源。开源地址：</Text>
-        <TouchableOpacity onPress={openHomePage}>
-          <Text style={textLinkStyle}>https://github.com/lyswhut/lx-music-mobile</Text>
+      <View style={styles.content}>
+        <View style={{ ...styles.disclaimer, backgroundColor: theme['c-primary-background-hover'] }}>
+          <Text style={styles.disclaimerTitle} size={14}>{t('setting_about_disclaimer_title')}</Text>
+          <Text style={styles.modifiedNotice} size={12} color={theme['c-font-label']}>
+            {t('setting_about_modified_notice')}
+          </Text>
+          <Text style={styles.disclaimerText} size={12} color={theme['c-font-label']}>
+            {t('setting_about_disclaimer')}
+          </Text>
+        </View>
+
+        <InfoRow
+          icon="github"
+          title={t('setting_about_repository')}
+          description={REPOSITORY_URL}
+          onPress={() => { void openUrl(REPOSITORY_URL) }}
+        />
+        <InfoRow
+          icon="source-fork"
+          title={t('setting_about_upstream')}
+          description={t('setting_about_upstream_desc')}
+          onPress={() => { void openUrl(UPSTREAM_URL) }}
+        />
+
+        <View style={styles.policyList}>
+          <InfoRow
+            icon="shield-account-outline"
+            title={t('setting_about_privacy')}
+            description={t('setting_about_privacy_desc')}
+            onPress={() => { privacyRef.current?.setVisible(true) }}
+          />
+          <InfoRow
+            icon="license"
+            title={t('setting_about_license')}
+            description={t('setting_about_license_desc')}
+            onPress={() => { licenseRef.current?.setVisible(true) }}
+          />
+        </View>
+      </View>
+
+      <PolicyPopup popupRef={privacyRef} title={t('setting_about_privacy')}>
+        <Text style={styles.policyIntro} size={13}>{t('setting_about_privacy_intro')}</Text>
+        <PolicyPart title={t('setting_about_privacy_local_title')}>
+          {t('setting_about_privacy_local')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_privacy_network_title')}>
+          {t('setting_about_privacy_network')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_privacy_permission_title')}>
+          {t('setting_about_privacy_permission')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_privacy_webdav_title')}>
+          {t('setting_about_privacy_webdav')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_privacy_control_title')}>
+          {t('setting_about_privacy_control')}
+        </PolicyPart>
+      </PolicyPopup>
+
+      <PolicyPopup popupRef={licenseRef} title={t('setting_about_license')}>
+        <Text style={styles.policyIntro} size={13}>{t('setting_about_license_intro')}</Text>
+        <PolicyPart title={t('setting_about_license_apache_title')}>
+          {t('setting_about_license_apache')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_license_upstream_title')}>
+          {t('setting_about_license_upstream')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_license_third_party_title')}>
+          {t('setting_about_license_third_party')}
+        </PolicyPart>
+        <PolicyPart title={t('setting_about_license_warranty_title')}>
+          {t('setting_about_license_warranty')}
+        </PolicyPart>
+        <TouchableOpacity style={styles.policyLink} onPress={() => { void openUrl(`${REPOSITORY_URL}/blob/master/LICENSE`) }}>
+          <IconMaterialCommunityIcons name="open-in-new" size={17} color={theme['c-primary-font']} />
+          <Text style={styles.policyLinkText} size={13} color={theme['c-primary-font']}>
+            {t('setting_about_license_view_repository')}
+          </Text>
         </TouchableOpacity>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>最新版下载地址：</Text>
-        <TouchableOpacity onPress={openGHReleasePage}>
-          <Text style={textLinkStyle}>GitHub Releases</Text>
+        <TouchableOpacity style={styles.policyLink} onPress={() => { void openUrl(`${UPSTREAM_URL}/blob/master/LICENSE`) }}>
+          <IconMaterialCommunityIcons name="open-in-new" size={17} color={theme['c-primary-font']} />
+          <Text style={styles.policyLinkText} size={13} color={theme['c-primary-font']}>
+            {t('setting_about_license_view_upstream')}
+          </Text>
         </TouchableOpacity>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text} >软件的常见问题可转至：</Text>
-        <TouchableOpacity onPress={openFAQPage}>
-          <Text style={textLinkStyle}>移动版常见问题</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}><Text style={styles.boldText}>本软件没有客服</Text>，但我们整理了一些常见的使用问题。<Text style={styles.boldText} >仔细、仔细、仔细</Text>地阅读常见问题后，</Text>
-        <Text style={styles.text}>仍有问题可到 GitHub </Text>
-        <TouchableOpacity onPress={openIssuePage}>
-          <Text style={textLinkStyle}>提交 Issue</Text>
-        </TouchableOpacity>
-        <Text style={styles.text}>。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>由于软件开发的初衷仅是为了对新技术的学习与研究，因此软件直至停止维护都将会一直保持纯净。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>目前本项目的原始发布地址<Text style={styles.boldText}>只有 GitHub</Text>，其他渠道均为第三方转载发布，可信度请自行鉴别。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}><Text style={styles.boldText}>本项目没有微信公众号之类的所谓「官方账号」，也未在小米、华为、vivo 等应用商店发布同名应用，谨防被骗！</Text></Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>若你使用过程中遇到<Text style={styles.boldText}>广告</Text>或者<Text style={styles.boldText}>引流</Text>（如需要加群、关注公众号之类才能使用或者升级）的信息，则表明你当前运行的软件是「第三方修改版」。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>若在升级新版本时提示「<Text style={styles.boldText}>签名不一致</Text>」，则表明你手机上的旧版本或者将要安装的新版本中<Text style={styles.boldText}>有一方</Text>是「<Text style={styles.boldText}>第三方修改版</Text>」。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>你已签署本软件的</Text>
-        <TouchableOpacity onPress={openPactModal}><Text style={styles.text} color={theme['c-primary-font']}>许可协议</Text></TouchableOpacity>
-        <Text style={styles.text}>，协议的在线版本在</Text>
-        <TouchableOpacity onPress={openPartPage}><Text style={textLinkStyle}>这里</Text></TouchableOpacity>
-        <Text style={styles.text}>。</Text>
-      </View>
-      <View style={styles.part}>
-        <Text style={styles.text}>By: </Text>
-        <Text style={styles.text}>落雪无痕</Text>
-      </View>
+      </PolicyPopup>
     </Section>
   )
 })
 
 const styles = createStyle({
-  part: {
-    marginLeft: 15,
-    marginRight: 15,
-    marginBottom: 10,
+  content: {
+    marginHorizontal: 10,
+  },
+  infoRow: {
+    minHeight: 66,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    borderBottomWidth: 1,
   },
-  text: {
-    fontSize: 14,
-    textAlignVertical: 'bottom',
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  boldText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlignVertical: 'bottom',
+  infoText: {
+    flex: 1,
+    paddingHorizontal: 11,
   },
-  throughText: {
-    fontSize: 14,
-    textDecorationLine: 'line-through',
-    textAlignVertical: 'bottom',
+  description: {
+    marginTop: 3,
+    lineHeight: setSpText(17),
   },
-  btn: {
+  modifiedNotice: {
+    marginBottom: 8,
+    lineHeight: setSpText(18),
+  },
+  disclaimer: {
+    marginBottom: 12,
+    marginHorizontal: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    borderRadius: 8,
+  },
+  disclaimerTitle: {
+    marginBottom: 5,
+  },
+  disclaimerText: {
+    lineHeight: setSpText(18),
+  },
+  policyList: {
+    marginTop: 12,
+  },
+  popupScroll: {
+    flexShrink: 1,
+  },
+  popupContent: {
+    paddingHorizontal: 18,
+    paddingBottom: 24,
+  },
+  policyIntro: {
+    marginBottom: 18,
+    lineHeight: setSpText(20),
+  },
+  policyPart: {
+    marginBottom: 18,
+  },
+  policyTitle: {
+    marginBottom: 6,
+  },
+  policyText: {
+    lineHeight: setSpText(20),
+  },
+  policyLink: {
+    minHeight: 42,
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  policyLinkText: {
+    marginLeft: 8,
   },
 })

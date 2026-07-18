@@ -7,8 +7,8 @@ export const usePlaybackState = () => {
 
   useEffect(() => {
     async function setPlayerState() {
-      const playerState = await TrackPlayer.getState()
-      setState(playerState)
+      const playerState = await TrackPlayer.getPlaybackState()
+      setState(playerState.state)
     }
 
     void setPlayerState()
@@ -79,11 +79,7 @@ export function useProgress(updateInterval: number) {
   }, [])
 
   const getProgress = async() => {
-    const [position, duration, buffered] = await Promise.all([
-      TrackPlayer.getPosition(),
-      TrackPlayer.getDuration(),
-      TrackPlayer.getBufferedPosition(),
-    ])
+    const { position, duration, buffered } = await TrackPlayer.getProgress()
     // After the asynchronous code is executed, if the component has been uninstalled, do not update the status
     if (isUnmountedRef.current) return
 
@@ -119,7 +115,7 @@ export function useBufferProgress() {
     let isUnmounted = false
     let preBuffered = 0
     let duration = 0
-    let interval: NodeJS.Timer | null = null
+    let interval: ReturnType<typeof setInterval> | null = null
 
     const clearItv = () => {
       if (!interval) return
@@ -127,10 +123,9 @@ export function useBufferProgress() {
       interval = null
     }
     const updateBuffer = async() => {
-      const buffered = await (duration ? TrackPlayer.getBufferedPosition() : Promise.all([TrackPlayer.getBufferedPosition(), TrackPlayer.getDuration()]).then(([buffered, _duration]) => {
-        duration = _duration
-        return buffered
-      }))
+      const progress = await TrackPlayer.getProgress()
+      const buffered = progress.buffered
+      if (!duration) duration = progress.duration
       // console.log('updateBuffer', buffered, duration, buffered > 0, buffered == duration)
       // After the asynchronous code is executed, if the component has been uninstalled, do not update the status
       if (buffered > 0 && buffered == duration) clearItv()
@@ -174,7 +169,7 @@ export function useBufferProgress() {
     })
 
     void updateBuffer()
-    void TrackPlayer.getState().then((state) => {
+    void TrackPlayer.getPlaybackState().then(({ state }) => {
       if (state == State.Buffering) interval = setInterval(updateBuffer, 1000)
     })
     return () => {

@@ -9,6 +9,7 @@ import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
+import { setSpText } from '@/utils/pixelRatio'
 
 // export interface OpenListProps {
 //   onTagChange: (name: string, id: string) => void
@@ -50,7 +51,7 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
   return (
     <>
       <Button style={styles.button} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
-        <Text>{t('songlist_open')}</Text>
+        <Text style={styles.text}>{t('songlist_open')}</Text>
       </Button>
       <Modal ref={modalRef} onOpenId={handleOpenSonglist} />
     </>
@@ -62,7 +63,13 @@ const styles = createStyle({
     // backgroundColor: '#ccc',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 4,
     paddingLeft: 12,
     paddingRight: 12,
+  },
+  text: {
+    includeFontPadding: true,
+    textAlignVertical: 'center',
+    lineHeight: setSpText(22),
   },
 })

@@ -5,6 +5,7 @@ import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
 import Leaderboard from '../Views/Leaderboard'
 import Setting from '../Views/Setting'
+import Download from '../Views/Download'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
 import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
@@ -13,18 +14,41 @@ import settingState from '@/store/setting/state'
 
 const hideKeys = [
   'list.isShowAlbumName',
+  'list.isShowCover',
   'list.isShowInterval',
   'theme.fontShadow',
 ] as Readonly<Array<keyof LX.AppSetting>>
 
+const indexMap = [
+  'nav_search',
+  'nav_songlist',
+  'nav_top',
+  'nav_love',
+  'nav_download',
+  'nav_setting',
+] as const
+
+const viewMap = {
+  nav_search: 0,
+  nav_songlist: 1,
+  nav_top: 2,
+  nav_love: 3,
+  nav_download: 4,
+  nav_setting: 5,
+}
+
+const isPageNear = (activeId: CommonState['navActiveId'], pageId: CommonState['navActiveId']) => {
+  return Math.abs(viewMap[activeId] - viewMap[pageId]) <= 1
+}
+
 const SearchPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_search')
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_search'))
   const component = useMemo(() => <Search />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_search') {
+      if (isPageNear(id, 'nav_search')) {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -53,13 +77,13 @@ const SearchPage = () => {
   return visible ? component : null
 }
 const SongListPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_songlist')
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_songlist'))
   const component = useMemo(() => <SongList />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_songlist') {
+      if (isPageNear(id, 'nav_songlist')) {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -81,7 +105,7 @@ const SongListPage = () => {
       global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
       global.state_event.off('themeUpdated', handleHide)
       global.state_event.off('languageChanged', handleHide)
-      global.state_event.on('configUpdated', handleConfigUpdated)
+      global.state_event.off('configUpdated', handleConfigUpdated)
     }
   }, [])
 
@@ -89,13 +113,13 @@ const SongListPage = () => {
   // return activeId == 1 || activeId == 0  ? SongList : null
 }
 const LeaderboardPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_top')
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_top'))
   const component = useMemo(() => <Leaderboard />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_top') {
+      if (isPageNear(id, 'nav_top')) {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -117,20 +141,20 @@ const LeaderboardPage = () => {
       global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
       global.state_event.off('themeUpdated', handleHide)
       global.state_event.off('languageChanged', handleHide)
-      global.state_event.on('configUpdated', handleConfigUpdated)
+      global.state_event.off('configUpdated', handleConfigUpdated)
     }
   }, [])
 
   return visible ? component : null
 }
 const MylistPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_love')
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_love'))
   const component = useMemo(() => <Mylist />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_love') {
+      if (isPageNear(id, 'nav_love')) {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -152,18 +176,18 @@ const MylistPage = () => {
       global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
       global.state_event.off('themeUpdated', handleHide)
       global.state_event.off('languageChanged', handleHide)
-      global.state_event.on('configUpdated', handleConfigUpdated)
+      global.state_event.off('configUpdated', handleConfigUpdated)
     }
   }, [])
 
   return visible ? component : null
 }
 const SettingPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_setting')
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_setting'))
   const component = useMemo(() => <Setting />, [])
   useEffect(() => {
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_setting') {
+      if (isPageNear(id, 'nav_setting')) {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -177,21 +201,18 @@ const SettingPage = () => {
   }, [])
   return visible ? component : null
 }
-
-const viewMap = {
-  nav_search: 0,
-  nav_songlist: 1,
-  nav_top: 2,
-  nav_love: 3,
-  nav_setting: 4,
+const DownloadPage = () => {
+  const [visible, setVisible] = useState(isPageNear(commonState.navActiveId, 'nav_download'))
+  const component = useMemo(() => <Download />, [])
+  useEffect(() => {
+    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
+      if (isPageNear(id, 'nav_download')) requestAnimationFrame(() => { setVisible(true) })
+    }
+    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
+    return () => { global.state_event.off('navActiveIdUpdated', handleNavIdUpdate) }
+  }, [])
+  return visible ? component : null
 }
-const indexMap = [
-  'nav_search',
-  'nav_songlist',
-  'nav_top',
-  'nav_love',
-  'nav_setting',
-] as const
 
 const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
@@ -286,6 +307,9 @@ const Main = () => {
       <View collapsable={false} key="nav_love" style={styles.pageStyle}>
         <MylistPage />
       </View>
+      <View collapsable={false} key="nav_download" style={styles.pageStyle}>
+        <DownloadPage />
+      </View>
       <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
         <SettingPage />
       </View>
@@ -323,4 +347,3 @@ const styles = createStyle({
 
 
 export default Main
-

@@ -28,6 +28,22 @@ export const selectFile = async(options: OpenDocumentOptions) => AndroidScoped.o
 export const removeManagedFolder = async(path: string) => AndroidScoped.releasePersistableUriPermission(path)
 export const getManagedFolders = async() => AndroidScoped.getPersistedUriPermissions()
 
+export const formatStoragePath = (path: string, internalStorageLabel: string) => {
+  if (!path.startsWith('content://')) return path
+  try {
+    const encodedDocumentId = path.match(/\/(?:tree|document)\/([^/?#]+)/)?.[1]
+    if (!encodedDocumentId) return decodeURIComponent(path)
+    const documentId = decodeURIComponent(encodedDocumentId)
+    const separatorIndex = documentId.indexOf(':')
+    const volume = separatorIndex < 0 ? documentId : documentId.slice(0, separatorIndex)
+    const relativePath = separatorIndex < 0 ? '' : documentId.slice(separatorIndex + 1)
+    const root = volume.toLowerCase() == 'primary' ? internalStorageLabel : volume
+    return [root, ...relativePath.split('/').filter(Boolean)].join(' / ')
+  } catch {
+    return path
+  }
+}
+
 export const getPersistedUriList = async() => AndroidScoped.getPersistedUriPermissions()
 
 

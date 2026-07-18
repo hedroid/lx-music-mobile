@@ -1,4 +1,4 @@
-import { createList, setTempList } from '@/core/list'
+import { createList, removeUserList, setTempList } from '@/core/list'
 import { playList } from '@/core/player/player'
 import { getListDetail, getListDetailAll } from '@/core/songlist'
 import { LIST_IDS } from '@/config/constant'
@@ -34,7 +34,7 @@ export const handlePlay = async(id: string, source: Source, list?: LX.Music.Musi
 export const handleCollect = async(id: string, source: Source, name: string) => {
   const listId = getListId(id, source)
 
-  const targetList = listState.userList.find(l => l.sourceListId == listId)
+  const targetList = getCollectedList(id, source)
   if (targetList) {
     const confirm = await confirmDialog({
       message: global.i18n.t('duplicate_list_tip', { name: targetList.name }),
@@ -52,7 +52,36 @@ export const handleCollect = async(id: string, source: Source, name: string) => 
     id: `${source}_${toMD5(listId)}`,
     list,
     source,
-    sourceListId: id,
+    sourceListId: listId,
   })
   toast(global.i18n.t('collect_success'))
+}
+
+export const getCollectedList = (id: string, source: Source) => {
+  const listId = getListId(id, source)
+  return listState.userList.find(list => (
+    list.sourceListId == listId ||
+    (list.source == source && list.sourceListId == id)
+  ))
+}
+
+export const handleToggleCollect = async(id: string, source: Source, name: string) => {
+  const targetList = getCollectedList(id, source)
+  if (targetList) {
+    await removeUserList([targetList.id])
+    toast(global.i18n.t('uncollect_success'))
+    return false
+  }
+
+  const listId = getListId(id, source)
+  const list = await getListDetailAll(source, id)
+  await createList({
+    name,
+    id: `${source}_${toMD5(listId)}`,
+    list,
+    source,
+    sourceListId: listId,
+  })
+  toast(global.i18n.t('collect_success'))
+  return true
 }

@@ -1,5 +1,5 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
+import { Animated, PanResponder, View, TouchableOpacity, useWindowDimensions } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
 import { Icon } from '@/components/common/Icon'
@@ -8,6 +8,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { useStatusbarHeight } from '@/store/common/hook'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const styles = createStyle({
   centeredView: {
@@ -25,6 +26,27 @@ const styles = createStyle({
     flexDirection: 'row',
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
+  },
+  dragHeader: {
+    flexGrow: 0,
+    flexShrink: 0,
+    paddingTop: 7,
+  },
+  dragHandleArea: {
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+  },
+  dragTitle: {
+    paddingLeft: 14,
+    paddingRight: 14,
+    paddingTop: 2,
+    paddingBottom: 10,
   },
   title: {
     paddingLeft: 10,
@@ -52,6 +74,7 @@ export interface PopupProps {
   keyHide?: boolean
   bgHide?: boolean
   closeBtn?: boolean
+  swipeToClose?: boolean
   position?: 'top' | 'left' | 'right' | 'bottom'
   title?: string
   children: React.ReactNode
@@ -66,6 +89,7 @@ export default forwardRef<PopupType, PopupProps>(({
   keyHide = true,
   bgHide = true,
   closeBtn = true,
+  swipeToClose = false,
   position = 'bottom',
   title = '',
   children,
@@ -73,11 +97,57 @@ export default forwardRef<PopupType, PopupProps>(({
   const theme = useTheme()
   const { keyboardShown, keyboardHeight } = useKeyboard()
   const statusBarHeight = useStatusbarHeight()
+  const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
 
   const modalRef = useRef<ModalType>(null)
+  const translateY = useRef(new Animated.Value(0)).current
+
+  const resetPosition = useCallback(() => {
+    Animated.spring(translateY, {
+      toValue: 0,
+      speed: 24,
+      bounciness: 0,
+      useNativeDriver: true,
+    }).start()
+  }, [translateY])
+
+  const hideWithAnimation = useCallback(() => {
+    Animated.timing(translateY, {
+      toValue: windowHeight,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (!finished) return
+      modalRef.current?.setVisible(false)
+    })
+  }, [translateY, windowHeight])
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => swipeToClose && position == 'bottom',
+    onMoveShouldSetPanResponder: (_, gestureState) => swipeToClose &&
+      position == 'bottom' &&
+      gestureState.dy > 6 &&
+      Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2,
+    onPanResponderGrant: () => {
+      translateY.stopAnimation()
+    },
+    onPanResponderMove: (_, gestureState) => {
+      translateY.setValue(Math.max(0, gestureState.dy))
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > 72 || gestureState.vy > 0.65) {
+        hideWithAnimation()
+      } else {
+        resetPosition()
+      }
+    },
+    onPanResponderTerminate: resetPosition,
+  }), [hideWithAnimation, position, resetPosition, swipeToClose, translateY])
 
   useImperativeHandle(ref, () => ({
     setVisible(visible: boolean) {
+      if (visible) translateY.setValue(0)
       modalRef.current?.setVisible(visible)
     },
   }))
@@ -169,15 +239,35 @@ export default forwardRef<PopupType, PopupProps>(({
   }, [position, statusBarHeight])
 
   return (
-    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(50,50,50,.2)" ref={modalRef}>
-      <View style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
-        <View style={{ ...styles.modalView, ...modalViewStyle, backgroundColor: theme['c-content-background'] }} onStartShouldSetResponder={() => true}>
-          <View style={styles.header}>
-            <Text size={13} style={styles.title} numberOfLines={1}>{title}</Text>
-            {closeBtnComponent}
-          </View>
+    <Modal animationType="none" onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(50,50,50,.2)" ref={modalRef}>
+      <View style={{
+        ...styles.centeredView,
+        ...centeredViewStyle,
+        paddingBottom: keyboardShown ? keyboardHeight : position == 'bottom' ? insets.bottom : 0,
+      }}>
+        <Animated.View
+          style={{
+            ...styles.modalView,
+            ...modalViewStyle,
+            backgroundColor: theme['c-content-background'],
+            transform: [{ translateY }],
+          }}
+          renderToHardwareTextureAndroid
+          onStartShouldSetResponder={() => true}
+        >
+          {swipeToClose && position == 'bottom'
+            ? <View style={styles.dragHeader} {...panResponder.panHandlers}>
+                <View style={styles.dragHandleArea}>
+                  <View style={{ ...styles.dragHandle, backgroundColor: theme['c-250'] }} />
+                </View>
+                <Text size={13} style={styles.dragTitle} numberOfLines={1}>{title}</Text>
+              </View>
+            : <View style={styles.header}>
+                <Text size={13} style={styles.title} numberOfLines={1}>{title}</Text>
+                {closeBtnComponent}
+              </View>}
           {children}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )

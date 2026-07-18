@@ -1,11 +1,11 @@
 package cn.toside.music.mobile;
 
 import com.facebook.react.PackageList;
-import com.facebook.react.flipper.ReactNativeFlipper;
 import com.reactnativenavigation.NavigationApplication;
+import com.facebook.react.ReactHost;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
+import com.facebook.react.defaults.DefaultReactHost;
 import com.reactnativenavigation.react.NavigationReactNativeHost;
 import java.util.List;
 
@@ -60,13 +60,8 @@ public class MainApplication extends NavigationApplication {
   }
 
   @Override
-  public void onCreate() {
-    super.onCreate();
-
-    if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      // If you opted-in for the New Architecture, we load the native entry point for this app.
-      DefaultNewArchitectureEntryPoint.load();
-    }
-    ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
+  public ReactHost getReactHost() {
+    return DefaultReactHost.getDefaultReactHost(getApplicationContext(), mReactNativeHost);
   }
+
 }

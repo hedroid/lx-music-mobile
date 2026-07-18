@@ -15,10 +15,10 @@ export default memo(() => {
 
   return (
     <>
-      <SubTitle title={t('setting_backup_part')}>
+      <SubTitle title={t('setting_backup_full')}>
         <View style={styles.list}>
-          <Button onPress={() => listImportExportRef.current?.import()}>{t('setting_backup_part_import_list')}</Button>
-          <Button onPress={() => listImportExportRef.current?.export()}>{t('setting_backup_part_export_list')}</Button>
+          <Button onPress={() => listImportExportRef.current?.export()}>{t('setting_backup_full_export')}</Button>
+          <Button onPress={() => listImportExportRef.current?.import()}>{t('setting_backup_full_restore')}</Button>
           {/* <Button onPress={() => importAndExportData('import', 'setting')}>{t('setting_backup_part_import_setting')}</Button>
           <Button onPress={() => importAndExportData('export', 'setting')}>{t('setting_backup_part_export_setting')}</Button> */}
         </View>

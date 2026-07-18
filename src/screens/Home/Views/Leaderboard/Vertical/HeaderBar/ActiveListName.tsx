@@ -4,6 +4,7 @@ import { TouchableOpacity } from 'react-native'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import { setSpText } from '@/utils/pixelRatio'
 
 export interface ActiveListNameProps {
   onShowBound: () => void
@@ -37,6 +38,7 @@ const styles = createStyle({
     paddingRight: 2,
     // height: 36,
     alignItems: 'center',
+    paddingBottom: 4,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   currentListIcon: {
@@ -47,6 +49,9 @@ const styles = createStyle({
   },
   currentListText: {
     flex: 1,
+    includeFontPadding: true,
+    textAlignVertical: 'center',
+    lineHeight: setSpText(22),
     // minWidth: 70,
     // paddingLeft: 10,
     paddingRight: 10,

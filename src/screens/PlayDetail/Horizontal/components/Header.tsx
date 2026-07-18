@@ -14,6 +14,7 @@ import CommentBtn from './CommentBtn'
 import Btn from './Btn'
 import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
 import DesktopLyricBtn from './DesktopLyricBtn'
+import ShareBtn from './ShareBtn'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -48,6 +49,7 @@ export default memo(() => {
         </TouchableOpacity>
         <Title />
         <DesktopLyricBtn />
+        <ShareBtn />
         <CommentBtn />
         <Btn icon="slider" onPress={showSetting} />
       </View>

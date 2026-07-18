@@ -1,5 +1,4 @@
 import { httpFetch } from '../../request'
-import { weapi } from './utils/crypto'
 import { formatPlayTime, sizeFormate } from '../../index'
 // https://github.com/Binaryify/NeteaseCloudMusicApi/blob/master/module/song_detail.js
 
@@ -11,7 +10,7 @@ export default {
     })
     return arr.join('、')
   },
-  filterList({ songs, privileges }) {
+  filterList({ songs, privileges = [] }) {
     // console.log(songs, privileges)
     const list = []
     songs.forEach((item, index) => {
@@ -19,36 +18,60 @@ export default {
       const _types = {}
       let size
       let privilege = privileges[index]
-      if (privilege.id !== item.id) privilege = privileges.find(p => p.id === item.id)
-      if (!privilege) return
+      if (privilege?.id !== item.id) privilege = privileges.find(p => p.id === item.id)
 
-      if (privilege.maxBrLevel == 'hires') {
-        size = item.hr ? sizeFormate(item.hr.size) : null
+      const highQuality = item.h ?? item.hMusic
+      const lowQuality = item.l ?? item.lMusic ?? item.bMusic
+      const losslessQuality = item.sq ?? item.sqMusic
+      const hiresQuality = item.hr
+      const maxBrLevel = privilege?.maxBrLevel
+      const maxBitrate = privilege?.maxbr
+
+      if (maxBrLevel == 'hires' || hiresQuality) {
+        size = hiresQuality ? sizeFormate(hiresQuality.size) : null
         types.push({ type: 'flac24bit', size })
         _types.flac24bit = {
           size,
         }
       }
-      switch (privilege.maxbr) {
+      switch (maxBitrate) {
         case 999000:
-          size = item.sq ? sizeFormate(item.sq.size) : null
+          size = losslessQuality ? sizeFormate(losslessQuality.size) : null
           types.push({ type: 'flac', size })
           _types.flac = {
             size,
           }
         case 320000:
-          size = item.h ? sizeFormate(item.h.size) : null
+          size = highQuality ? sizeFormate(highQuality.size) : null
           types.push({ type: '320k', size })
           _types['320k'] = {
             size,
           }
         case 192000:
         case 128000:
-          size = item.l ? sizeFormate(item.l.size) : null
+          size = lowQuality ? sizeFormate(lowQuality.size) : null
           types.push({ type: '128k', size })
           _types['128k'] = {
             size,
           }
+      }
+
+      if (!privilege) {
+        if (losslessQuality) {
+          size = sizeFormate(losslessQuality.size)
+          types.push({ type: 'flac', size })
+          _types.flac = { size }
+        }
+        if (highQuality) {
+          size = sizeFormate(highQuality.size)
+          types.push({ type: '320k', size })
+          _types['320k'] = { size }
+        }
+        if (lowQuality) {
+          size = sizeFormate(lowQuality.size)
+          types.push({ type: '128k', size })
+          _types['128k'] = { size }
+        }
       }
 
       types.reverse()
@@ -70,15 +93,17 @@ export default {
           typeUrl: {},
         })
       } else {
+        const artists = item.ar ?? item.artists
+        const album = item.al ?? item.album
         list.push({
-          singer: this.getSinger(item.ar),
+          singer: this.getSinger(artists),
           name: item.name ?? '',
-          albumName: item.al?.name,
-          albumId: item.al?.id,
+          albumName: album?.name,
+          albumId: album?.id,
           source: 'wy',
-          interval: formatPlayTime(item.dt / 1000),
+          interval: formatPlayTime((item.dt ?? item.duration) / 1000),
           songmid: item.id,
-          img: item.al?.picUrl,
+          img: album?.picUrl,
           lrc: null,
           otherSource: null,
           types,
@@ -90,23 +115,30 @@ export default {
     // console.log(list)
     return list
   },
-  async getList(ids = [], retryNum = 0) {
+  async getListPart(ids, retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
 
-    const requestObj = httpFetch('https://music.163.com/weapi/v3/song/detail', {
+    const requestObj = httpFetch('https://music.163.com/api/song/detail/', {
       method: 'post',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        origin: 'https://music.163.com',
+        'User-Agent': 'NeteaseMusic/9.1.40 (Linux; Android 14)',
+        Referer: 'https://music.163.com/',
       },
-      form: weapi({
-        c: '[' + ids.map(id => ('{"id":' + id + '}')).join(',') + ']',
-        ids: '[' + ids.join(',') + ']',
-      }),
+      form: { ids: `[${ids.join(',')}]` },
     })
     const { body, statusCode } = await requestObj.promise
-    if (statusCode != 200 || body.code !== 200) throw new Error('获取歌曲详情失败')
-    // console.log(body)
-    return { source: 'wy', list: this.filterList(body) }
+    if (statusCode != 200 || body.code !== 200 || !Array.isArray(body.songs)) return this.getListPart(ids, ++retryNum)
+    return this.filterList(body)
+  },
+  async getList(ids = []) {
+    if (!ids.length) return { source: 'wy', list: [] }
+
+    // The legacy song detail endpoint silently caps each response at 100 songs.
+    // Fetching in batches keeps full playlists and charts intact.
+    const list = []
+    for (let index = 0; index < ids.length; index += 100) {
+      list.push(...await this.getListPart(ids.slice(index, index + 100)))
+    }
+    return { source: 'wy', list }
   },
 }

@@ -56,14 +56,17 @@ const MoreBtn = ({ showAll, setShowAll }: {
   const t = useI18n()
 
   return (
-    showAll ? null
-      : (
-          <TouchableOpacity style={styles.moreBtn} activeOpacity={0.5} onPress={() => { setShowAll(!showAll) }}>
-            <Text size={14} color={theme['c-primary-font']} numberOfLines={1}>{t('setting_basic_theme_more_btn_show')}</Text>
-            <Icon name="chevron-right" size={12} color={theme['c-primary-font']} />
-          </TouchableOpacity>
-        )
-
+    <TouchableOpacity style={styles.moreBtn} activeOpacity={0.5} onPress={() => { setShowAll(!showAll) }}>
+      <Text size={14} color={theme['c-primary-font']} numberOfLines={1}>
+        {t(showAll ? 'setting_basic_theme_more_btn_hide' : 'setting_basic_theme_more_btn_show')}
+      </Text>
+      <Icon
+        style={showAll ? styles.collapseIcon : undefined}
+        name="chevron-right"
+        size={12}
+        color={theme['c-primary-font']}
+      />
+    </TouchableOpacity>
   )
 }
 
@@ -89,6 +92,13 @@ export default memo(() => {
 
   return (
     <SubTitle title={t('setting_basic_theme')}>
+      {showAll
+        ? (
+            <View style={styles.collapseRow}>
+              <MoreBtn showAll={showAll} setShowAll={setShowAll} />
+            </View>
+          )
+        : null}
       <View style={styles.list}>
         {
           themeInfo.themes.map(({ id, config }) => {
@@ -114,7 +124,7 @@ export default memo(() => {
               setTheme={setThemeId} />
           })
         }
-        <MoreBtn showAll={showAll} setShowAll={setShowAll} />
+        {!showAll ? <MoreBtn showAll={showAll} setShowAll={setShowAll} /> : null}
       </View>
     </SubTitle>
   )
@@ -158,5 +168,13 @@ const styles = createStyle({
     alignItems: 'center',
     // justifyContent: 'center',
     gap: 8,
+  },
+  collapseRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 6,
+  },
+  collapseIcon: {
+    transform: [{ rotate: '-90deg' }],
   },
 })

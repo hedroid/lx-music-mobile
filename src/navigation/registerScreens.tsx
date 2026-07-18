@@ -1,6 +1,7 @@
 // @flow
 
 import { Navigation } from 'react-native-navigation'
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context'
 
 import {
   Home,
@@ -28,11 +29,13 @@ import SyncModeModal from './components/SyncModeModal'
 function WrappedComponent(Component: any) {
   return function inject(props: Record<string, any>) {
     const EnhancedComponent = () => (
-      <Provider>
-        <Component
-          {...props}
-        />
-      </Provider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics} style={{ flex: 1 }}>
+        <Provider>
+          <Component
+            {...props}
+          />
+        </Provider>
+      </SafeAreaProvider>
     )
 
     return <EnhancedComponent />

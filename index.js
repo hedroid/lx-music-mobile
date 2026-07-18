@@ -1,7 +1,10 @@
 /**
  * @format
  */
+import './src/config/devWarnings'
 import './shim'
+import './src/config/globalData'
+import './src/plugins/player/registerService'
 import './src/app'
 // import './test'
 // import '@/utils/errorHandle'

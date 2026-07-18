@@ -67,8 +67,12 @@ export default memo(() => {
     <Section title={t('setting_version')}>
       <SubTitle title={title}>
         <View style={styles.desc}>
-          <Text size={14}>{t('version_label_latest_ver')}{versionInfo.newVersion?.version}</Text>
           <Text size={14}>{t('version_label_current_ver')}{currentVer}</Text>
+          {
+            !versionInfo.isLatest && versionInfo.newVersion?.version
+              ? <Text size={14}>{t('version_label_latest_ver')}{versionInfo.newVersion.version}</Text>
+              : null
+          }
           {
             tip ? <Text size={14}>{tip}</Text> : null
           }

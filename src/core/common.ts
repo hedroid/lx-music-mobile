@@ -12,7 +12,7 @@ import commonState, { type InitState as CommonStateType } from '@/store/common/s
 import { storageDataPrefix } from '@/config/constant'
 import { saveData } from '@/plugins/storage'
 import { throttle } from '@/utils/common'
-import { getSelectedManagedFolder, saveFontSize, saveViewPrevState, setSelectedManagedFolder } from '@/utils/data'
+import { getSelectedManagedFolder, normalizeFontSize, saveFontSize, saveViewPrevState, setSelectedManagedFolder } from '@/utils/data'
 import { showPactModal as handleShowPactModal } from '@/navigation'
 import { hideDesktopLyricView } from '@/utils/nativeModules/lyricDesktop'
 import { getPersistedUriList, selectManagedFolder } from '@/utils/fs'
@@ -65,8 +65,10 @@ export const exitApp = (reason: string) => {
 }
 
 export const setFontSize = (size: number) => {
-  commonActions.setFontSize(size)
-  void saveFontSize(size)
+  const normalizedSize = normalizeFontSize(size)
+  global.lx.fontSize = normalizedSize
+  commonActions.setFontSize(normalizedSize)
+  void saveFontSize(normalizedSize)
 }
 
 export const setStatusbarHeight = (size: number) => {

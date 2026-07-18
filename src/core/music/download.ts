@@ -7,6 +7,7 @@ import {
   getLyricInfo as getOnlineLyricInfo,
 } from './online'
 import { buildLyricInfo, getCachedLyricInfo } from './utils'
+import { existsFile } from '@/utils/fs'
 
 export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
   musicInfo: LX.Download.ListItem
@@ -14,10 +15,9 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   allowToggleSource?: boolean
 }): Promise<string> => {
-  // if (!isRefresh) {
-  //   const path = await getDownloadFilePath(musicInfo, appSetting['download.savePath'])
-  //   if (path) return path
-  // }
+  // A completed download is a local source. Even a player refresh must keep
+  // using the file instead of resolving a new online URL.
+  if (await existsFile(musicInfo.metadata.filePath)) return musicInfo.metadata.filePath
 
   return getOnlineMusicUrl({ musicInfo: musicInfo.metadata.musicInfo, isRefresh, onToggleSource, allowToggleSource })
 }

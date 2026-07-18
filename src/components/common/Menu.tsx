@@ -7,10 +7,20 @@ import Modal, { type ModalType } from './Modal'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
-import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
+import { scaleSizeH, scaleSizeW, setSpText } from '@/utils/pixelRatio'
 
 const menuItemHeight = scaleSizeH(40)
 const menuItemWidth = scaleSizeW(100)
+
+const estimateLabelWidth = (label: string, fontSize: number) => {
+  const unitWidth = setSpText(fontSize)
+  const textWidth = Array.from(label).reduce((width, char) => {
+    if (/\s/.test(char)) return width + unitWidth * 0.35
+    if (char.charCodeAt(0) <= 0xff) return width + unitWidth * 0.62
+    return width + unitWidth
+  }, 0)
+  return Math.ceil(textWidth + scaleSizeW(24))
+}
 
 export interface Position { w: number, h: number, x: number, y: number, menuWidth?: number, menuHeight?: number }
 export interface MenuSize { width?: number, height?: number }
@@ -80,11 +90,15 @@ const Menu = ({
   // console.log(buttonPosition)
 
   const menuItemStyle = useMemo(() => {
+    const labelWidth = menus.reduce((maxWidth, menu) => Math.max(maxWidth, estimateLabelWidth(menu.label, fontSize)), 0)
     return {
-      width: width ?? menuSize.width ?? menuItemWidth,
+      width: Math.min(
+        windowSize.width - scaleSizeW(24),
+        Math.max(width ?? 0, menuSize.width ?? 0, menuItemWidth, labelWidth),
+      ),
       height: height ?? menuSize.height ?? menuItemHeight,
     }
-  }, [menuSize, width, height])
+  }, [fontSize, height, menuSize.height, menuSize.width, menus, width, windowSize.width])
 
   const menuStyle = useMemo(() => {
     let menuHeight = menus.length * menuItemStyle.height
@@ -210,4 +224,4 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
 }
 
 // export default forwardRef(Component) as ForwardRefFn<MenuType>
-export default forwardRef(Component) as <M extends Menus>(p: MenuProps<M> & { ref?: Ref<MenuType> }) => JSX.Element | null
+export default forwardRef(Component) as <M extends Menus>(p: MenuProps<M> & { ref?: Ref<MenuType> }) => React.ReactElement | null

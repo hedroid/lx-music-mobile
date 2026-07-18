@@ -1,5 +1,4 @@
 import { initSetting, showPactModal } from '@/core/common'
-import registerPlaybackService from '@/plugins/player/service'
 import initTheme from './theme'
 import initI18n from './i18n'
 import initUserApi from './userApi'
@@ -13,17 +12,14 @@ import commonActions from '@/store/common/action'
 import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
-import { cheatTip } from '@/utils/tools'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
-  await cheatTip()
   if (settingState.setting['common.isAgreePact']) {
-    if (isFirstPush) {
-      isFirstPush = false
-      void checkUpdate()
-      void initDeeplink()
-    }
+    if (!isFirstPush) return
+    isFirstPush = false
+    void checkUpdate()
+    void initDeeplink()
   } else {
     if (isFirstPush) isFirstPush = false
     showPactModal()
@@ -51,8 +47,6 @@ export default async() => {
   setApiSource(setting['common.apiSource'])
   bootLog('Api inited.')
 
-  registerPlaybackService()
-  bootLog('Playback Service Registered.')
   await initPlayer(setting)
   bootLog('Player inited.')
   await dataInit(setting)

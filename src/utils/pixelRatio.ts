@@ -51,7 +51,10 @@ export function getTextSize(size: number) {
   return size
 }
 export function setSpText(size: number) {
-  return getTextSize(size) * global.lx.fontSize
+  const fontSizeScale = Number.isFinite(global.lx.fontSize) && global.lx.fontSize > 0
+    ? global.lx.fontSize
+    : 1
+  return Math.max(getTextSize(size) * fontSizeScale, 1)
 }
 
 /**

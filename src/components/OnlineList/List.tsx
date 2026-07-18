@@ -8,7 +8,6 @@ import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
 import { useTheme } from '@/store/theme/hook'
 import settingState from '@/store/setting/state'
-import { MULTI_SELECT_BAR_HEIGHT } from './MultipleModeBar'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { handlePlay } from './listAction'
@@ -24,6 +23,7 @@ export interface ListProps {
   onShowMenu: (musicInfo: LX.Music.MusicInfoOnline, index: number, position: Position) => void
   onMuiltSelectMode: () => void
   onSelectAll: (isAll: boolean) => void
+  onSelectionChange: (selectedList: LX.Music.MusicInfoOnline[]) => void
   onRefresh: () => void
   onLoadMore: () => void
   onPlayList?: (index: number) => void
@@ -48,6 +48,7 @@ const List = forwardRef<ListType, ListProps>(({
   onShowMenu,
   onMuiltSelectMode,
   onSelectAll,
+  onSelectionChange,
   onRefresh,
   onLoadMore,
   onPlayList,
@@ -70,6 +71,7 @@ const List = forwardRef<ListType, ListProps>(({
   const [status, setStatus] = useState<Status>('idle')
   const rowInfo = useRef(getRowInfo(rowType))
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
+  const isShowCover = useSettingValue('list.isShowCover')
   const isShowInterval = useSettingValue('list.isShowInterval')
   // const currentListIdRef = useRef('')
   // console.log('render music list')
@@ -78,7 +80,10 @@ const List = forwardRef<ListType, ListProps>(({
     setList(list, isAppend, showSource) {
       setList(list)
       setShowSource(showSource)
-      if (!isAppend && selectedListRef.current.length) setSelectedList(selectedListRef.current = [])
+      if (!isAppend && selectedListRef.current.length) {
+        setSelectedList(selectedListRef.current = [])
+        onSelectionChange([])
+      }
     },
     setIsMultiSelectMode(isMultiSelectMode) {
       isMultiSelectModeRef.current = isMultiSelectMode
@@ -100,6 +105,7 @@ const List = forwardRef<ListType, ListProps>(({
       }
       selectedListRef.current = list
       setSelectedList(list)
+      onSelectionChange(list)
     },
     getSelectedList() {
       return selectedListRef.current
@@ -118,6 +124,7 @@ const List = forwardRef<ListType, ListProps>(({
     else if (selectedListRef.current.length == currentList.length) onSelectAll(false)
     selectedListRef.current = newList
     setSelectedList(newList)
+    onSelectionChange(newList)
   }
   const handleSelect = (item: LX.Music.MusicInfoOnline, pressIndex: number) => {
     let newList: LX.Music.MusicInfoOnline[]
@@ -191,7 +198,9 @@ const List = forwardRef<ListType, ListProps>(({
       selectedList={selectedList}
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
+      isShowCover={isShowCover}
       isShowInterval={isShowInterval}
+      isMultiSelectMode={visibleMultiSelect}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
@@ -223,11 +232,11 @@ const List = forwardRef<ListType, ListProps>(({
         break
     }
     return (
-      <View style={{ width: '100%', paddingBottom: visibleMultiSelect ? MULTI_SELECT_BAR_HEIGHT : 0 }} >
+      <View style={{ width: '100%' }} >
         <Footer label={label} onLoadMore={onLoadMore} />
       </View>
     )
-  }, [onLoadMore, status, visibleMultiSelect])
+  }, [onLoadMore, status])
 
   return (
     <FlatList
@@ -236,11 +245,11 @@ const List = forwardRef<ListType, ListProps>(({
       data={currentList}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
-      maxToRenderPerBatch={4}
-      // updateCellsBatchingPeriod={80}
-      windowSize={8}
+      maxToRenderPerBatch={8}
+      updateCellsBatchingPeriod={32}
+      windowSize={12}
       removeClippedSubviews={true}
-      initialNumToRender={12}
+      initialNumToRender={16}
       renderItem={renderItem}
       keyExtractor={getkey}
       getItemLayout={getItemLayout}

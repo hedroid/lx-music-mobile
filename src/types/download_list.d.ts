@@ -41,6 +41,8 @@ declare namespace LX {
 
     interface ListItem {
       id: string
+      createdAt: number
+      updatedAt: number
       isComplate: boolean
       status: DownloadTaskStatus
       statusText: string
@@ -48,6 +50,7 @@ declare namespace LX {
       total: number
       progress: number
       speed: string
+      error?: string
       metadata: {
         musicInfo: LX.Music.MusicInfoOnline
         url: string | null

@@ -21,7 +21,11 @@ const Item = ({ id, name }: {
 }) => {
   const isActive = useActive(id)
   // const [toggleCheckBox, setToggleCheckBox] = useState(false)
-  return <CheckBox marginRight={8} check={isActive} label={name} onChange={() => { setLanguage(id) }} need />
+  return (
+    <View style={styles.option}>
+      <CheckBox check={isActive} label={name} labelNumberOfLines={1} onChange={() => { setLanguage(id) }} need />
+    </View>
+  )
 }
 
 export default memo(() => {
@@ -42,5 +46,12 @@ const styles = StyleSheet.create({
   list: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  option: {
+    flexShrink: 0,
+    minHeight: 42,
+    justifyContent: 'center',
+    marginRight: 18,
+    marginBottom: 4,
   },
 })

@@ -31,6 +31,5 @@ const List = <T extends ItemT<T>>(props: ListProps<T>, ref: Ref<ListType<T>>) =>
 }
 
 export default forwardRef(List) as
-  <M,>(p: ListProps<M> & { ref?: Ref<ListType<M>> }) => JSX.Element | null
-
+  <M,>(p: ListProps<M> & { ref?: Ref<ListType<M>> }) => React.ReactElement | null
 

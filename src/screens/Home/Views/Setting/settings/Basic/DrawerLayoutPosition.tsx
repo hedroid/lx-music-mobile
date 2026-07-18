@@ -31,7 +31,11 @@ const Item = ({ position, label }: {
 }) => {
   const isActive = useActive(position)
   // const [toggleCheckBox, setToggleCheckBox] = useState(false)
-  return <CheckBox marginRight={8} check={isActive} label={label} onChange={() => { updateSetting({ 'common.drawerLayoutPosition': position }) }} need />
+  return (
+    <View style={styles.option}>
+      <CheckBox check={isActive} label={label} labelNumberOfLines={1} onChange={() => { updateSetting({ 'common.drawerLayoutPosition': position }) }} need />
+    </View>
+  )
 }
 
 export default memo(() => {
@@ -56,5 +60,12 @@ const styles = StyleSheet.create({
   list: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  option: {
+    flexShrink: 0,
+    minHeight: 42,
+    justifyContent: 'center',
+    marginRight: 18,
+    marginBottom: 4,
   },
 })

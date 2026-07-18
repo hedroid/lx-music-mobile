@@ -19,7 +19,7 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
       minimumValue={minimumValue}
       maximumValue={maximumValue}
       minimumTrackTintColor={theme['c-button-background-active']}
-      maximumTrackTintColor={theme['c-button-background']}
+      maximumTrackTintColor={theme['c-primary-alpha-500']}
       thumbTintColor={theme['c-primary-light-100']}
       onSlidingStart={onSlidingStart}
       onSlidingComplete={onSlidingComplete}
@@ -32,11 +32,8 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
 
 const styles = createStyle({
   slider: {
-    flexShrink: 0,
+    flexShrink: 1,
     flexGrow: 1,
-    // width: '100%',
-    maxWidth: 300,
     height: 40,
-    marginTop: -6,
   },
 })

@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { memo, useRef, type ComponentRef } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 // import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
@@ -9,6 +9,8 @@ import { useTheme } from '@/store/theme/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { LIST_ITEM_HEIGHT } from '@/config/constant'
 import { createStyle, type RowInfo } from '@/utils/tools'
+import MusicCover from '@/components/MusicCover'
+import Checkbox from '@/components/common/CheckBox/Checkbox'
 
 export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
 
@@ -29,7 +31,7 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   return info
 }
 
-export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowCover, isShowInterval, isMultiSelectMode }: {
   item: LX.Music.MusicInfoOnline
   index: number
   showSource?: boolean
@@ -39,16 +41,18 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   selectedList: LX.Music.MusicInfoOnline[]
   rowInfo: RowInfo
   isShowAlbumName: boolean
+  isShowCover: boolean
   isShowInterval: boolean
+  isMultiSelectMode: boolean
 }) => {
   const theme = useTheme()
 
   const isSelected = selectedList.includes(item)
 
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<ComponentRef<typeof TouchableOpacity>>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((_fx: number, _fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
@@ -61,7 +65,11 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   return (
     <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
-        <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>
+        {isShowCover
+          ? <View style={styles.coverContent}>
+              <MusicCover musicInfo={item} style={styles.cover} />
+            </View>
+          : <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>}
         <View style={styles.itemInfo}>
           <Text numberOfLines={1}>{item.name}</Text>
           <View style={styles.listItemSingle}>
@@ -76,16 +84,25 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
           ) : null
         }
       </TouchableOpacity>
-     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
-        <Icon name="dots-vertical" style={{ color: theme['c-350'] }} size={12} />
-      </TouchableOpacity>
+      {isMultiSelectMode
+        ? <Checkbox
+            status={isSelected ? 'checked' : 'unchecked'}
+            onPress={() => { onPress(item, index) }}
+            tintColors={{ true: theme['c-primary'], false: theme['c-500'] }}
+            size={0.9}
+          />
+        : <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
+            <Icon name="dots-vertical" style={{ color: theme['c-350'] }} size={12} />
+          </TouchableOpacity>}
     </View>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
+    prevProps.isShowCover === nextProps.isShowCover &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
+    prevProps.isMultiSelectMode === nextProps.isMultiSelectMode &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
   )
 })
@@ -114,6 +131,17 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
     paddingLeft: 3,
     paddingRight: 3,
+  },
+  coverContent: {
+    width: 54,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cover: {
+    width: 42,
+    height: 42,
+    borderRadius: 4,
   },
   itemInfo: {
     flexGrow: 1,
@@ -168,4 +196,3 @@ const styles = createStyle({
     justifyContent: 'center',
   },
 })
-

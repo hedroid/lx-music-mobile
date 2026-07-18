@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useCallback, useEffect, useRef } from 'react'
 import { ScrollView, TouchableOpacity, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
@@ -104,9 +104,24 @@ const MenuItem = ({ id, icon, onPress }: {
 
 export default memo(() => {
   const theme = useTheme()
+  const activeId = useNavActiveId()
+  const menuScrollRef = useRef<ScrollView>(null)
   // console.log('render drawer nav')
   const showBackBtn = useSettingValue('common.showBackBtn')
   const showExitBtn = useSettingValue('common.showExitBtn')
+
+  const scrollToActiveMenu = useCallback((animated = false) => {
+    const activeIndex = NAV_MENUS.findIndex(menu => menu.id == activeId)
+    if (activeIndex < 0) return
+    menuScrollRef.current?.scrollTo({
+      y: Math.max(0, (activeIndex - 2) * 50),
+      animated,
+    })
+  }, [activeId])
+
+  useEffect(() => {
+    requestAnimationFrame(() => { scrollToActiveMenu(true) })
+  }, [scrollToActiveMenu])
 
   const handlePress = (id: IdType) => {
     switch (id) {
@@ -131,7 +146,12 @@ export default memo(() => {
   return (
     <View style={{ ...styles.container, borderRightColor: theme['c-border-background'] }}>
       <Header />
-      <ScrollView style={styles.menus}>
+      <ScrollView
+        ref={menuScrollRef}
+        style={styles.menus}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => { scrollToActiveMenu(false) }}
+      >
         <View style={styles.list}>
           {NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
         </View>
@@ -145,4 +165,3 @@ export default memo(() => {
     </View>
   )
 })
-

@@ -4,6 +4,7 @@ import PlayModeBtn from './PlayModeBtn'
 import MusicAddBtn from './MusicAddBtn'
 import DesktopLyricBtn from './DesktopLyricBtn'
 import CommentBtn from './CommentBtn'
+import ShareBtn from './ShareBtn'
 
 export default () => {
   return (
@@ -11,6 +12,7 @@ export default () => {
       <DesktopLyricBtn />
       <MusicAddBtn />
       <PlayModeBtn />
+      <ShareBtn />
       <CommentBtn />
     </View>
   )

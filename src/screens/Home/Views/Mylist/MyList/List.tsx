@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef, type ElementRef } from 'react'
 import { View, TouchableOpacity, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
@@ -26,14 +26,14 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
   onShowMenu: (item: LX.List.MyListInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
 }) => {
   const theme = useTheme()
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<ElementRef<typeof TouchableOpacity>>(null)
   const fetching = useListFetching(item.id)
 
   const active = activeId == item.id
 
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((_fx: number, _fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
@@ -187,4 +187,3 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
 })
-

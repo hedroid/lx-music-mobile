@@ -101,6 +101,9 @@ jobs:
         working-directory: android
         shell: bash
         run: |
+          # RN 0.78's new architecture can configure the app CMake target
+          # before dependent libraries have generated their JNI sources.
+          ./gradlew generateCodegenArtifactsFromSchema
           ./gradlew assembleRelease \
             -PMYAPP_UPLOAD_STORE_FILE="$RUNNER_TEMP/lx-music-release.jks" \
             -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_ALIAS" \

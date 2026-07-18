@@ -7,6 +7,7 @@ import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
 import { scaleSizeH } from '@/utils/pixelRatio'
+import { useStatusbarHeight } from '@/store/common/hook'
 
 export type SelectMode = 'single' | 'range'
 
@@ -15,16 +16,18 @@ export const MULTI_SELECT_BAR_HEIGHT = scaleSizeH(40)
 export interface MultipleModeBarProps {
   onSwitchMode: (mode: SelectMode) => void
   onSelectAll: (isAll: boolean) => void
+  onDownloadSelected: () => void
   onExitSelectMode: () => void
 }
 export interface MultipleModeBarType {
   show: () => void
   setIsSelectAll: (isAll: boolean) => void
   setSwitchMode: (mode: SelectMode) => void
+  setSelectedCount: (count: number) => void
   exitSelectMode: () => void
 }
 
-export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelectAll, onSwitchMode, onExitSelectMode }, ref) => {
+export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelectAll, onSwitchMode, onDownloadSelected, onExitSelectMode }, ref) => {
   // const isGetDetailFailedRef = useRef(false)
   const [visible, setVisible] = useState(false)
   const [animatePlayed, setAnimatPlayed] = useState(true)
@@ -32,7 +35,9 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
   const animTranslateY = useRef(new Animated.Value(0)).current
   const [selectMode, setSelectMode] = useState<SelectMode>('single')
   const [isSelectAll, setIsSelectAll] = useState(false)
+  const [selectedCount, setSelectedCount] = useState(0)
   const theme = useTheme()
+  const statusBarHeight = useStatusbarHeight()
 
   useImperativeHandle(ref, () => ({
     show() {
@@ -43,6 +48,9 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
     },
     setSwitchMode(mode: SelectMode) {
       setSelectMode(mode)
+    },
+    setSelectedCount(count: number) {
+      setSelectedCount(count)
     },
     exitSelectMode() {
       handleHide()
@@ -58,7 +66,7 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
 
       Animated.parallel([
         Animated.timing(animFade, {
-          toValue: 0.92,
+          toValue: 1,
           duration: 200,
           useNativeDriver: true,
         }),
@@ -96,14 +104,15 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
 
   const animaStyle = useMemo(() => ({
     ...styles.container,
-    height: MULTI_SELECT_BAR_HEIGHT,
-    // backgroundColor: theme['c-content-background'],
+    height: MULTI_SELECT_BAR_HEIGHT + statusBarHeight,
+    paddingTop: statusBarHeight,
+    backgroundColor: theme['c-content-background'],
     borderBottomColor: theme['c-border-background'],
     opacity: animFade, // Bind opacity to animated value
     transform: [
       { translateY: animTranslateY },
     ],
-  }), [animFade, animTranslateY, theme])
+  }), [animFade, animTranslateY, statusBarHeight, theme])
 
   const handleSelectAll = useCallback(() => {
     const selectAll = !isSelectAll
@@ -115,32 +124,30 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
     return (
       <Animated.View style={animaStyle}>
         <View style={styles.switchBtn}>
-          <Button onPress={() => { onSwitchMode('single') }} style={{ ...styles.btn, backgroundColor: selectMode == 'single' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_single')}</Text>
-          </Button>
-          <Button onPress={() => { onSwitchMode('range') }} style={{ ...styles.btn, backgroundColor: selectMode == 'range' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_range')}</Text>
+          <Button onPress={() => { onSwitchMode(selectMode == 'range' ? 'single' : 'range') }} style={{ ...styles.btn, backgroundColor: selectMode == 'range' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
+            <Text color={selectMode == 'range' ? theme['c-button-font'] : theme['c-font']}>{global.i18n.t('list_select_range')}</Text>
           </Button>
         </View>
         <TouchableOpacity onPress={handleSelectAll} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')}</Text>
+          <Text color={theme['c-font']}>{global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onDownloadSelected} disabled={!selectedCount} style={styles.btn}>
+          <Text color={selectedCount ? theme['c-primary'] : theme['c-400']}>{global.i18n.t('download_selected', { count: selectedCount })}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onExitSelectMode} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t('list_select_cancel')}</Text>
+          <Text color={theme['c-font']}>{global.i18n.t('list_select_cancel')}</Text>
         </TouchableOpacity>
       </Animated.View>
     )
-  }, [animaStyle, selectMode, theme, handleSelectAll, isSelectAll, onExitSelectMode, onSwitchMode])
+  }, [animaStyle, selectMode, theme, handleSelectAll, isSelectAll, onDownloadSelected, onExitSelectMode, onSwitchMode, selectedCount])
 
   return !visible && animatePlayed ? null : component
 })
 
 const styles = createStyle({
   container: {
-    flex: 1,
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
+    flexGrow: 0,
+    flexShrink: 0,
     width: '100%',
     // height: 40,
     flexDirection: 'row',
@@ -151,9 +158,8 @@ const styles = createStyle({
     flex: 1,
   },
   btn: {
-    // flex: 1,
-    paddingLeft: 18,
-    paddingRight: 18,
+    paddingLeft: 12,
+    paddingRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -3,6 +3,7 @@ import { TouchableOpacity, View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
+import { setSpText } from '@/utils/pixelRatio'
 
 const TEXT_LIMIT = 160
 const SUB_TEXT_LIMIT = TEXT_LIMIT * 1.2
@@ -51,7 +52,7 @@ export default memo(({ text }: { text: string }) => {
 const styles = createStyle({
   text: {
     marginTop: 5,
-    lineHeight: 19,
+    lineHeight: setSpText(19),
   },
   toggle: {
     marginTop: 15,

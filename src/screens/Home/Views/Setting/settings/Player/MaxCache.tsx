@@ -37,6 +37,7 @@ export default memo(() => {
       <InputItem
         value={size}
         label={t('setting_play_cache_size')}
+        inline
         onChanged={setSize}
         keyboardType="number-pad"
         placeholder={t('setting_play_cache_size_no_cache')} />
@@ -49,4 +50,3 @@ const styles = createStyle({
     marginTop: 10,
   },
 })
-

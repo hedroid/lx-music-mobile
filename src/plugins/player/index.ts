@@ -29,15 +29,19 @@ const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnabl
   await migratePlayerCache()
   await TrackPlayer.setupPlayer({
     maxCacheSize: cacheSize * 1024,
-    maxBuffer: 1000,
-    waitForBuffer: true,
-    handleAudioFocus: isHandleAudioFocus,
-    audioOffload: isEnableAudioOffload,
+    minBuffer: 15,
+    maxBuffer: 50,
+    playBuffer: 2.5,
+    autoHandleInterruptions: isHandleAudioFocus,
     autoUpdateMetadata: false,
   })
   global.lx.playerStatus.isInitialized = true
   global.lx.playerStatus.isIniting = false
-  await updateOptions()
+  await updateOptions({
+    android: {
+      audioOffload: isEnableAudioOffload,
+    },
+  })
   await setVolume(volume)
   await setPlaybackRate(playRate)
   // listenEvent()

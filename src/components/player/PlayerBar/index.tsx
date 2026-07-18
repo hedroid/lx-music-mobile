@@ -1,5 +1,5 @@
-import { memo, useMemo } from 'react'
-import { View } from 'react-native'
+import { memo, useMemo, useRef } from 'react'
+import { PanResponder, TouchableOpacity, View } from 'react-native'
 import { useKeyboard } from '@/utils/hooks'
 
 import Pic from './components/Pic'
@@ -10,16 +10,35 @@ import { createStyle } from '@/utils/tools'
 // import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import { Icon } from '@/components/common/Icon'
+import CurrentPlaylist, { type CurrentPlaylistType } from '@/components/player/CurrentPlaylist'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
   // const { onLayout, ...layout } = useLayout()
   const { keyboardShown } = useKeyboard()
   const theme = useTheme()
+  const insets = useSafeAreaInsets()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
+  const playlistRef = useRef<CurrentPlaylistType>(null)
+  const swipeUpResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) =>
+      gestureState.dy < -8 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2,
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy < -42 || gestureState.vy < -0.55) playlistRef.current?.show()
+    },
+  }), [])
 
   const playerComponent = useMemo(() => (
-    <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}>
+    <View
+      style={{
+        ...styles.container,
+        paddingBottom: 5 + insets.bottom,
+        backgroundColor: theme['c-content-background'],
+      }}
+      {...swipeUpResponder.panHandlers}
+    >
       <Pic isHome={isHome} />
       <View style={styles.center}>
         <Title isHome={isHome} />
@@ -30,13 +49,21 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
       </View>
       <View style={styles.right}>
         <ControlBtn />
+        <TouchableOpacity style={styles.playlistBtn} onPress={() => { playlistRef.current?.show() }}>
+          <Icon name="menu" color={theme['c-button-font']} size={21} />
+        </TouchableOpacity>
       </View>
     </View>
-  ), [theme, isHome])
+  ), [theme, insets.bottom, isHome, swipeUpResponder])
 
   // console.log('render pb')
 
-  return autoHidePlayBar && keyboardShown ? null : playerComponent
+  return (
+    <>
+      {autoHidePlayBar && keyboardShown ? null : playerComponent}
+      <CurrentPlaylist ref={playlistRef} />
+    </>
+  )
 })
 
 
@@ -80,6 +107,12 @@ const styles = createStyle({
     flexShrink: 0,
     paddingLeft: 5,
     paddingRight: 5,
+  },
+  playlistBtn: {
+    width: 42,
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // row: {
   //   flexDirection: 'row',

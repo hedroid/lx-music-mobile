@@ -7,6 +7,7 @@ import { useI18n } from '@/lang'
 
 import { useSettingValue } from '@/store/setting/hook'
 import { createStyle } from '@/utils/tools'
+import { setSpText } from '@/utils/pixelRatio'
 
 type Sources = Readonly<Array<LX.OnlineSource | 'all'>>
 
@@ -60,24 +61,36 @@ const Component = <S extends Sources>({ fontSize = 15, center, onSourceChange }:
       activeId={source}
     >
       <View style={styles.sourceMenu}>
-        <Text style={{ textAlign: center ? 'center' : 'left' }} numberOfLines={1} size={fontSize}>{t(`source_${sourceNameType}_${source}`)}</Text>
+        <Text
+          style={{ ...styles.sourceText, textAlign: center ? 'center' : 'left' }}
+          numberOfLines={1}
+          size={fontSize}
+        >
+          {t(`source_${sourceNameType}_${source}`)}
+        </Text>
       </View>
     </DorpDownMenu>
   )
 }
 
-export default forwardRef(Component) as <S extends Sources>(p: SourceSelectorProps<S> & { ref?: Ref<SourceSelectorType<S>> }) => JSX.Element | null
+export default forwardRef(Component) as <S extends Sources>(p: SourceSelectorProps<S> & { ref?: Ref<SourceSelectorType<S>> }) => React.ReactElement | null
 
 
 const styles = createStyle({
   sourceMenu: {
     height: '100%',
     justifyContent: 'center',
+    paddingBottom: 4,
     // paddingTop: 12,
     // paddingBottom: 12,
     paddingLeft: 15,
     paddingRight: 15,
     // backgroundColor: '#ccc',
 
+  },
+  sourceText: {
+    includeFontPadding: true,
+    textAlignVertical: 'center',
+    lineHeight: setSpText(22),
   },
 })

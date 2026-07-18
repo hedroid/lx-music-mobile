@@ -13,6 +13,7 @@ import { useI18n } from '@/lang'
 import { useVersionDownloadProgressUpdated, useVersionInfo, useVersionInfoIgnoreVersionUpdated } from '@/store/version/hook'
 import ModalContent from './ModalContent'
 import { checkUpdate, downloadUpdate, hideModal, setIgnoreVersion } from '@/core/version'
+import { setSpText } from '@/utils/pixelRatio'
 
 const VersionItem = ({ version, desc }: VersionInfo) => {
   return (
@@ -42,8 +43,12 @@ const Content = memo(({ title, newVersionInfo }: {
     <View style={styles.main}>
       <Text style={styles.title}>{title}</Text>
       <ScrollView style={styles.content} keyboardShouldPersistTaps={'always'}>
-        <Text style={styles.label}>{t('version_label_latest_ver')}{newVersionInfo?.version}</Text>
         <Text style={styles.label}>{t('version_label_current_ver')}{currentVer}</Text>
+        {
+          newVersionInfo?.version && compareVer(currentVer, newVersionInfo.version) < 0
+            ? <Text style={styles.label}>{t('version_label_latest_ver')}{newVersionInfo.version}</Text>
+            : null
+        }
         {
           newVersionInfo?.desc
             ? (
@@ -217,7 +222,7 @@ const styles = createStyle({
     flexGrow: 0,
   },
   title: {
-    fontSize: 18,
+    fontSize: setSpText(18),
     textAlign: 'center',
     marginBottom: 15,
   },
@@ -228,12 +233,12 @@ const styles = createStyle({
     marginBottom: 10,
   },
   label: {
-    fontSize: 14,
+    fontSize: setSpText(14),
     marginBottom: 2,
   },
   desc: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: setSpText(13),
+    lineHeight: setSpText(18),
   },
   tip: {
     paddingLeft: 15,
@@ -260,4 +265,3 @@ const styles = createStyle({
 })
 
 export default VersionModal
-

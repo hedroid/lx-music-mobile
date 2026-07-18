@@ -8,6 +8,7 @@ import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/comp
 import MultipleModeBar, { type MultipleModeBarType, type SelectMode } from './MultipleModeBar'
 import { handleDislikeMusic, handlePlay, handlePlayLater, handleShare, handleShowMusicSourceDetail } from './listAction'
 import { createStyle } from '@/utils/tools'
+import { startDownload, startDownloads } from '@/core/download'
 
 export interface OnlineListProps {
   onRefresh: ListProps['onRefresh']
@@ -17,10 +18,16 @@ export interface OnlineListProps {
   ListHeaderComponent?: ListProps['ListHeaderComponent']
   checkHomePagerIdle?: boolean
   rowType?: RowInfoType
+  showMultipleModeBar?: boolean
+  onSelectionModeChange?: (active: boolean) => void
+  onSelectionChange?: (selectedList: LX.Music.MusicInfoOnline[], isAll: boolean) => void
 }
 export interface OnlineListType {
   setList: (list: LX.Music.MusicInfoOnline[], isAppend?: boolean, showSource?: boolean) => void
   setStatus: (val: Status) => void
+  selectAll: (isAll: boolean) => void
+  exitSelectMode: () => void
+  downloadSelected: () => void
 }
 
 export default forwardRef<OnlineListType, OnlineListProps>(({
@@ -31,6 +38,9 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   ListHeaderComponent,
   checkHomePagerIdle = false,
   rowType,
+  showMultipleModeBar = true,
+  onSelectionModeChange,
+  onSelectionChange,
 }, ref) => {
   const listRef = useRef<ListType>(null)
   const multipleModeBarRef = useRef<MultipleModeBarType>(null)
@@ -43,15 +53,26 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
     setList(list, isAppend = false, showSource = false) {
       listRef.current?.setList(list, isAppend, showSource)
       multipleModeBarRef.current?.setIsSelectAll(false)
+      multipleModeBarRef.current?.setSelectedCount(0)
     },
     setStatus(val) {
       listRef.current?.setStatus(val)
+    },
+    selectAll(isAll) {
+      listRef.current?.selectAll(isAll)
+    },
+    exitSelectMode() {
+      hancelExitSelect()
+    },
+    downloadSelected() {
+      handleDownloadSelected()
     },
   }))
 
   const hancelMultiSelect = () => {
     multipleModeBarRef.current?.show()
     listRef.current?.setIsMultiSelectMode(true)
+    onSelectionModeChange?.(true)
   }
   const hancelSwitchSelectMode = (mode: SelectMode) => {
     multipleModeBarRef.current?.setSwitchMode(mode)
@@ -60,6 +81,12 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   const hancelExitSelect = () => {
     multipleModeBarRef.current?.exitSelectMode()
     listRef.current?.setIsMultiSelectMode(false)
+    onSelectionModeChange?.(false)
+  }
+  const handleDownloadSelected = () => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    void startDownloads(selectedList)
+    hancelExitSelect()
   }
 
   const showMenu = (musicInfo: LX.Music.MusicInfoOnline, index: number, position: Position) => {
@@ -81,11 +108,24 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   return (
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
+        {showMultipleModeBar
+          ? <MultipleModeBar
+              ref={multipleModeBarRef}
+              onSwitchMode={hancelSwitchSelectMode}
+              onSelectAll={isAll => listRef.current?.selectAll(isAll)}
+              onDownloadSelected={handleDownloadSelected}
+              onExitSelectMode={hancelExitSelect}
+            />
+          : null}
         <List
           ref={listRef}
           onShowMenu={showMenu}
           onMuiltSelectMode={hancelMultiSelect}
           onSelectAll={isAll => multipleModeBarRef.current?.setIsSelectAll(isAll)}
+          onSelectionChange={selectedList => {
+            multipleModeBarRef.current?.setSelectedCount(selectedList.length)
+            onSelectionChange?.(selectedList, selectedList.length == listRef.current?.getList().length)
+          }}
           onRefresh={onRefresh}
           onLoadMore={onLoadMore}
           onPlayList={onPlayList}
@@ -94,12 +134,6 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
           checkHomePagerIdle={checkHomePagerIdle}
           rowType={rowType}
         />
-        <MultipleModeBar
-          ref={multipleModeBarRef}
-          onSwitchMode={hancelSwitchSelectMode}
-          onSelectAll={isAll => listRef.current?.selectAll(isAll)}
-          onExitSelectMode={hancelExitSelect}
-        />
       </View>
       <ListMusicAdd ref={listMusicAddRef} onAdded={() => { hancelExitSelect() }} />
       <ListMusicMultiAdd ref={listMusicMultiAddRef} onAdded={() => { hancelExitSelect() }} />
@@ -107,6 +141,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
         ref={listMenuRef}
         onPlay={info => { handlePlay(info.musicInfo) }}
         onPlayLater={info => { hancelExitSelect(); handlePlayLater(info.musicInfo, info.selectedList, hancelExitSelect) }}
+        onDownload={info => { void startDownload(info.musicInfo) }}
         onCopyName={info => { handleShare(info.musicInfo) }}
         onAdd={handleAddMusic}
         onMusicSourceDetail={info => { void handleShowMusicSourceDetail(info.musicInfo) }}
@@ -130,4 +165,3 @@ const styles = createStyle({
     height: 40,
   },
 })
-

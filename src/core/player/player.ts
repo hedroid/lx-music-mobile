@@ -24,10 +24,11 @@ import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
 import BackgroundTimer from 'react-native-background-timer'
-import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
+import { checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
+import { resetCurrentPlaylist } from './currentPlaylist'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -99,7 +100,10 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   addLoadTimeout()
 
   // const type = getPlayType(settingState.setting['player.isPlayHighQuality'], musicInfo)
-  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
+  // Downloaded items must try their local file first. Their nested online
+  // metadata may still contain toggleMusicInfo, but consulting it here would
+  // trigger a network request before the local download is checked.
+  let toggleMusicInfo = 'progress' in musicInfo ? undefined : musicInfo.meta.toggleMusicInfo
 
   return (toggleMusicInfo ? getMusicUrl({
     musicInfo: toggleMusicInfo,
@@ -229,7 +233,6 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
 const handlePlay = async() => {
   if (!isInitialized()) {
     await checkNotificationPermission()
-    void checkIgnoringBatteryOptimization()
     await playerInitial({
       volume: settingState.setting['player.volume'],
       playRate: settingState.setting['player.playbackRate'],
@@ -272,6 +275,7 @@ const handlePlay = async() => {
  */
 export const playListById = async(listId: string, id: string) => {
   const prevListId = playerState.playInfo.playerListId
+  resetCurrentPlaylist(listId)
   setPlayListId(listId)
   const musicInfo = getList(listId).find(m => m.id == id)
   if (!musicInfo) return
@@ -286,8 +290,9 @@ export const playListById = async(listId: string, id: string) => {
  * @param listId 列表id
  * @param index 播放的歌曲位置
  */
-export const playList = async(listId: string, index: number) => {
+export const playList = async(listId: string, index: number, resetPlaylist = true) => {
   const prevListId = playerState.playInfo.playerListId
+  if (resetPlaylist) resetCurrentPlaylist(listId)
   setPlayListId(listId)
   setPlayMusicInfo(listId, getList(listId)[index])
   if (settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
@@ -665,4 +670,3 @@ export const dislikeMusic = async() => {
   await addDislikeInfo([{ name: minfo.name, singer: minfo.singer }])
   await playNext(true)
 }
-
