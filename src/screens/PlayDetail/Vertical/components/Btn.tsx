@@ -5,7 +5,7 @@ import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
-const MATERIAL_ICON_SIZE = 20
+const MATERIAL_ICON_SIZE = 22
 
 export default ({ icon, materialIcon, materialIconSize = MATERIAL_ICON_SIZE, color, onPress }: {
   icon?: string

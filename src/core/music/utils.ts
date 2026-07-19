@@ -213,19 +213,26 @@ export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInf
   })
 }
 
-export const TRY_QUALITYS_LIST = ['flac24bit', 'flac', '320k'] as const
-type TryQualityType = typeof TRY_QUALITYS_LIST[number]
+// WAV and APE remain supported internally, but are grouped into the FLAC lossless
+// choice in the UI. They are containers/codecs rather than separate quality tiers.
+export const TRY_QUALITYS_LIST = ['flac24bit', 'flac', '320k', '192k'] as const
 export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
   let type: LX.Quality = '128k'
-  if (TRY_QUALITYS_LIST.includes(highQuality as TryQualityType)) {
-    let list = global.lx.qualityList[musicInfo.source]
-
-    let t = TRY_QUALITYS_LIST
-      .slice(TRY_QUALITYS_LIST.indexOf(highQuality as TryQualityType))
-      .find(q => musicInfo.meta._qualitys[q] && list?.includes(q))
-
-    if (t) type = t
+  const sourceQualitys = global.lx.qualityList[musicInfo.source]
+  const fallbackMap: Partial<Record<LX.Quality, LX.Quality[]>> = {
+    flac24bit: ['flac24bit', 'flac', 'wav', 'ape', '320k', '192k'],
+    flac: ['flac', 'wav', 'ape', '320k', '192k'],
+    // Keep old settings and imported backups compatible after WAV/APE are hidden.
+    wav: ['wav', 'flac', 'ape', '320k', '192k'],
+    ape: ['ape', 'flac', 'wav', '320k', '192k'],
+    '320k': ['320k', '192k'],
+    '192k': ['192k'],
   }
+  const targetQualitys = fallbackMap[highQuality]
+  const matchedQuality = targetQualitys?.find(quality => (
+    !!musicInfo.meta._qualitys[quality] && (!sourceQualitys || sourceQualitys.includes(quality))
+  ))
+  if (matchedQuality) type = matchedQuality
   return type
 }
 

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -27,12 +28,14 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
+import com.facebook.react.common.assets.ReactFontManager;
 
 import java.io.File;
 import java.util.Locale;
 import java.util.Objects;
 
 public class UtilsModule extends ReactContextBaseJavaModule {
+  private static final String CUSTOM_FONT_FAMILY = "LXCustomFont";
   private final ReactApplicationContext reactContext;
 
   private int listenerCount = 0;
@@ -123,6 +126,22 @@ public class UtilsModule extends ReactContextBaseJavaModule {
       array.pushString(abi);
     }
     promise.resolve(array);
+  }
+
+  @ReactMethod
+  public void registerCustomFont(String filePath, Promise promise) {
+    try {
+      File fontFile = new File(filePath);
+      if (!fontFile.isFile()) {
+        promise.reject("FONT_NOT_FOUND", "Font file does not exist: " + filePath);
+        return;
+      }
+      Typeface typeface = Typeface.createFromFile(fontFile);
+      ReactFontManager.getInstance().addCustomFont(CUSTOM_FONT_FAMILY, typeface);
+      promise.resolve(CUSTOM_FONT_FAMILY);
+    } catch (RuntimeException error) {
+      promise.reject("INVALID_FONT", "Unable to load this font file", error);
+    }
   }
 
   @ReactMethod
@@ -382,4 +401,3 @@ public class UtilsModule extends ReactContextBaseJavaModule {
     }).start();
   }
 }
-

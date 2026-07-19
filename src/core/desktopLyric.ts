@@ -28,10 +28,12 @@ import { tranditionalize } from '@/utils/simplify-chinese-main'
 import { getPosition } from '@/plugins/player'
 export {
   onLyricLinePlay,
+  onDesktopLyricAction,
 } from '@/utils/nativeModules/lyricDesktop'
 
 export const showDesktopLyric = async() => {
   const setting = settingState.setting
+  const isLegacyDefaultPosition = setting['desktopLyric.position.x'] == 0 && setting['desktopLyric.position.y'] == 0
   await showDesktopLyricView({
     isShowToggleAnima: setting['desktopLyric.showToggleAnima'],
     isSingleLine: setting['desktopLyric.isSingleLine'],
@@ -44,9 +46,9 @@ export const showDesktopLyric = async() => {
     width: setting['desktopLyric.width'],
     maxLineNum: setting['desktopLyric.maxLineNum'],
     positionX: setting['desktopLyric.position.x'],
-    positionY: setting['desktopLyric.position.y'],
-    textPositionX: setting['desktopLyric.textPosition.x'],
-    textPositionY: setting['desktopLyric.textPosition.y'],
+    positionY: isLegacyDefaultPosition ? 45 : setting['desktopLyric.position.y'],
+    textPositionX: isLegacyDefaultPosition ? 'center' : setting['desktopLyric.textPosition.x'],
+    textPositionY: isLegacyDefaultPosition ? 'center' : setting['desktopLyric.textPosition.y'],
   })
   let lrc = playerState.musicInfo.lrc ?? ''
   let tlrc = playerState.musicInfo.tlrc ?? ''

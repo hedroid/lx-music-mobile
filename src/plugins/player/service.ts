@@ -73,6 +73,7 @@ const registerPlaybackService = async() => {
   })
 
   TrackPlayer.addEventListener(TPEvent.RemoteSeek, async({ position }) => {
+    await TrackPlayer.seekTo(position)
     global.app_event.setProgress(position)
   })
 

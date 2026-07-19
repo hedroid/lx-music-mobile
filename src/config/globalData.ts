@@ -23,6 +23,7 @@ if (process.versions == null) {
 
 global.lx = {
   fontSize: 1,
+  customFontFamily: null,
   playerStatus: {
     isInitialized: false,
     isRegisteredService: false,

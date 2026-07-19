@@ -104,6 +104,7 @@ def npmPackageJson = getNpmPackageJson()
 def verCode = npmPackageJson["versionCode"]
 def verName = npmPackageJson["version"]
 def applicationName = npmPackageJson["name"]
+def useDeveloperSupport = project.hasProperty("standaloneDebug") ? "false" : "true"
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -158,6 +159,9 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            applicationIdSuffix ".debug"
+            resValue "string", "app_name", "LX Music Debug"
+            buildConfigField "boolean", "USE_DEVELOPER_SUPPORT", useDeveloperSupport
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -167,6 +171,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
 
             signingConfig signingConfigs.release
+            buildConfigField "boolean", "USE_DEVELOPER_SUPPORT", "false"
         }
     }
 

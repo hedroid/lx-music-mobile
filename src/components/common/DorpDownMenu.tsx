@@ -19,6 +19,7 @@ export default <T extends Menus>({
   children,
   activeId,
   btnStyle,
+  animationType,
 }: DorpDownMenuProps<T>) => {
   const buttonRef = useRef<BtnType>(null)
   const menuRef = useRef<MenuType>(null)
@@ -34,8 +35,10 @@ export default <T extends Menus>({
   }
 
   return (
-    <Button style={btnStyle} ref={buttonRef} onPress={showMenu}>
-      {children}
+    <>
+      <Button style={btnStyle} ref={buttonRef} onPress={showMenu}>
+        {children}
+      </Button>
       <Menu
         ref={menuRef}
         menus={menus}
@@ -44,7 +47,8 @@ export default <T extends Menus>({
         fontSize={fontSize}
         height={height}
         activeId={activeId}
+        animationType={animationType}
       />
-    </Button>
+    </>
   )
 }

@@ -14,6 +14,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 
 public class LyricModule extends ReactContextBaseJavaModule {
+  private static LyricModule activeModule;
+  private static boolean appInForeground = true;
   private final ReactApplicationContext reactContext;
   Lyric lyric;
   // final Map<String, Object> constants = new HashMap<>();
@@ -27,6 +29,7 @@ public class LyricModule extends ReactContextBaseJavaModule {
   LyricModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
+    activeModule = this;
 
     // constants.put("THEME_GREEN", "#07c556");
     // constants.put("THEME_YELLOW", "#fffa12");
@@ -36,6 +39,14 @@ public class LyricModule extends ReactContextBaseJavaModule {
     // constants.put("THEME_PURPLE", "#c851d4");
     // constants.put("THEME_ORANGE", "#fffa12");
     // constants.put("THEME_GREY", "#bdc3c7");
+  }
+
+  public static void setAppInForeground(boolean foreground) {
+    appInForeground = foreground;
+    LyricModule module = activeModule;
+    if (module != null && module.lyric != null) {
+      module.reactContext.runOnUiQueueThread(() -> module.lyric.setAppInForeground(foreground));
+    }
   }
 
   @Override
@@ -68,6 +79,7 @@ public class LyricModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void showDesktopLyric(ReadableMap data, Promise promise) {
     if (lyric == null) lyric = new Lyric(reactContext, isShowTranslation, isShowRoma, playbackRate);
+    lyric.setAppInForeground(appInForeground);
     lyric.showDesktopLyric(Arguments.toBundle(data), promise);
   }
 
@@ -117,7 +129,10 @@ public class LyricModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void play(int time, Promise promise) {
     Log.d("Lyric", "play lyric: " + time);
-    if (lyric != null) lyric.play(time);
+    if (lyric != null) {
+      lyric.play(time);
+      lyric.setPlaying(true);
+    }
     promise.resolve(null);
   }
 

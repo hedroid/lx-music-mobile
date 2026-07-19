@@ -1,11 +1,14 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, PanResponder, type GestureResponderEvent, TouchableOpacity, View } from 'react-native'
+import { FlatList, PanResponder, type GestureResponderEvent, TouchableOpacity, View } from 'react-native'
 
 import Badge from '@/components/common/Badge'
 import { IconMaterialCommunityIcons } from '@/components/common/Icon'
+import PlayingIndicator from '@/components/player/PlayingIndicator'
 import Popup, { type PopupType } from '@/components/common/Popup'
 import Text from '@/components/common/Text'
 import MusicCover from '@/components/MusicCover'
+import { LIST_IDS } from '@/config/constant'
+import { clearListMusics, removeListMusics, updateListMusicPosition } from '@/core/list'
 import { clearCurrentPlaylist, removeCurrentPlaylistMusic, reorderCurrentPlaylist } from '@/core/player/currentPlaylist'
 import { getList, setPlayMusicInfo, updatePlayIndex } from '@/core/player/playInfo'
 import { playList, stop } from '@/core/player/player'
@@ -20,56 +23,6 @@ export interface CurrentPlaylistType {
 }
 
 const getMusicInfo = (item: LX.Player.PlayMusic) => 'progress' in item ? item.metadata.musicInfo : item
-
-const PlayingIndicator = memo(({ playing }: { playing: boolean }) => {
-  const t = useI18n()
-  const theme = useTheme()
-  const bars = useRef([
-    new Animated.Value(0.4),
-    new Animated.Value(0.7),
-    new Animated.Value(0.5),
-  ]).current
-
-  useEffect(() => {
-    const restingValues = [0.4, 0.7, 0.5]
-    bars.forEach((bar, index) => { bar.setValue(restingValues[index]) })
-    if (!playing) return
-
-    const animation = Animated.loop(Animated.parallel(bars.map((bar, index) => Animated.sequence([
-      Animated.delay(index * 60),
-      Animated.timing(bar, {
-        toValue: 1,
-        duration: 180 + index * 35,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bar, {
-        toValue: 0.3 + index * 0.1,
-        duration: 220 - index * 25,
-        useNativeDriver: true,
-      }),
-    ]))))
-    animation.start()
-    return () => { animation.stop() }
-  }, [bars, playing])
-
-  return (
-    <View
-      style={styles.playingIndicator}
-      accessibilityLabel={t(playing ? 'player_current_playlist_playing' : 'player_current_playlist_paused')}
-    >
-      {bars.map((bar, index) => (
-        <Animated.View
-          key={index}
-          style={{
-            ...styles.playingBar,
-            backgroundColor: theme['c-primary-font'],
-            transform: [{ scaleY: bar }],
-          }}
-        />
-      ))}
-    </View>
-  )
-})
 
 const ITEM_HEIGHT = 56
 
@@ -175,7 +128,7 @@ const CurrentPlaylistItem = memo(({ item, active, playing, dragging, onPress, on
           </View>
         </View>
         <View style={styles.trailing}>
-          {active ? <PlayingIndicator playing={playing} /> : null}
+          {active ? <View style={styles.playingIndicatorWrap}><PlayingIndicator playing={playing} /></View> : null}
           <Text style={styles.duration} numberOfLines={1} size={12} color={theme['c-250']}>
             {musicInfo.interval ?? ''}
           </Text>
@@ -239,6 +192,7 @@ export default memo(forwardRef<CurrentPlaylistType>((_, ref) => {
     const listId = playerState.playInfo.playerListId
     if (!listId || !list.length) return
     clearCurrentPlaylist(listId)
+    if (listId == LIST_IDS.DEFAULT) void clearListMusics([LIST_IDS.DEFAULT])
     setList([])
     void stop()
     setPlayMusicInfo(null, null)
@@ -257,6 +211,7 @@ export default memo(forwardRef<CurrentPlaylistType>((_, ref) => {
     }
 
     removeCurrentPlaylistMusic(listId, item.id)
+    if (listId == LIST_IDS.DEFAULT) void removeListMusics(LIST_IDS.DEFAULT, [item.id])
     const nextList = [...getList(listId)]
     setList(nextList)
 
@@ -307,6 +262,7 @@ export default memo(forwardRef<CurrentPlaylistType>((_, ref) => {
     if (!listId) return
     setList(currentList => {
       reorderCurrentPlaylist(listId, currentList.map(item => item.id))
+      if (listId == LIST_IDS.DEFAULT) void updateListMusicPosition(LIST_IDS.DEFAULT, 0, currentList.map(item => item.id))
       updatePlayIndex()
       return currentList
     })
@@ -420,18 +376,8 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  playingIndicator: {
-    width: 18,
-    height: 20,
+  playingIndicatorWrap: {
     marginRight: 7,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  playingBar: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
   },
   duration: {
     width: 42,

@@ -2,11 +2,13 @@ import { playList } from '@/core/player/player'
 import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
+import { LIST_IDS } from '@/config/constant'
+import { updatePlayIndex } from '@/core/player/playInfo'
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
 import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/data'
 // import { useMusicList } from '@/store/list/hook'
-import { getListMusics, setActiveList } from '@/core/list'
+import { getListMusics, setActiveList, updateListMusicPosition } from '@/core/list'
 import ListItem, { ITEM_HEIGHT } from './ListItem'
 import { createStyle, getRowInfo } from '@/utils/tools'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
@@ -54,6 +56,9 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const prevSelectIndexRef = useRef(-1)
   const [selectedList, setSelectedList] = useState<LX.List.ListMusics>([])
   const selectedListRef = useRef<LX.List.ListMusics>([])
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const dragStartIndexRef = useRef(-1)
+  const dragCurrentIndexRef = useRef(-1)
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
@@ -235,10 +240,54 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
   const handleLongPress = (item: LX.Music.MusicInfo, index: number) => {
+    if (listState.activeListId == LIST_IDS.DEFAULT) return
     if (isMultiSelectModeRef.current) return
     prevSelectIndexRef.current = index
     handleUpdateSelectedList([item])
     onMuiltSelectMode()
+  }
+
+  const handleDragStart = (index: number) => {
+    if (listState.activeListId != LIST_IDS.DEFAULT || isMultiSelectModeRef.current) return
+    const item = currentList[index]
+    if (!item) return
+    dragStartIndexRef.current = index
+    dragCurrentIndexRef.current = index
+    setDraggingId(item.id)
+  }
+
+  const handleDragMove = (dy: number) => {
+    if (dragStartIndexRef.current < 0) return
+    const rowOffset = Math.round(dy / ITEM_HEIGHT)
+    const targetIndex = Math.max(0, Math.min(
+      currentList.length - 1,
+      dragStartIndexRef.current + rowOffset * (rowInfo.current.rowNum ?? 1),
+    ))
+    if (targetIndex == dragCurrentIndexRef.current) return
+
+    setList(list => {
+      const nextList = [...list]
+      const [item] = nextList.splice(dragCurrentIndexRef.current, 1)
+      if (!item) return list
+      nextList.splice(targetIndex, 0, item)
+      selectedListRef.current = []
+      setSelectedList([])
+      return nextList
+    })
+    dragCurrentIndexRef.current = targetIndex
+  }
+
+  const handleDragEnd = () => {
+    if (dragStartIndexRef.current < 0) return
+    dragStartIndexRef.current = -1
+    dragCurrentIndexRef.current = -1
+    setDraggingId(null)
+    setList(list => {
+      void updateListMusicPosition(LIST_IDS.DEFAULT, 0, list.map(item => item.id)).then(() => {
+        if (playerState.playMusicInfo.listId == LIST_IDS.DEFAULT) updatePlayIndex()
+      })
+      return list
+    })
   }
 
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -263,6 +312,11 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       isShowAlbumName={isShowAlbumName}
       isShowCover={isShowCover}
       isShowInterval={isShowInterval}
+      draggable={listState.activeListId == LIST_IDS.DEFAULT && !isMultiSelectModeRef.current}
+      dragging={draggingId == item.id}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
@@ -279,13 +333,14 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       maxToRenderPerBatch={8}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
+      scrollEnabled={draggingId == null}
       updateCellsBatchingPeriod={32}
       windowSize={12}
       removeClippedSubviews={true}
       initialNumToRender={16}
       renderItem={renderItem}
       keyExtractor={getkey}
-      extraData={activeIndex}
+      extraData={`${activeIndex}_${draggingId ?? ''}`}
       getItemLayout={getItemLayout}
     />
   )

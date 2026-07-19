@@ -13,6 +13,8 @@ import { useSettingValue } from '@/store/setting/hook'
 import { Icon } from '@/components/common/Icon'
 import CurrentPlaylist, { type CurrentPlaylistType } from '@/components/player/CurrentPlaylist'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { scaleSizeH } from '@/utils/pixelRatio'
+import { PLAYER_BOTTOM_LIFT } from '@/config/constant'
 
 
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
@@ -34,7 +36,7 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
     <View
       style={{
         ...styles.container,
-        paddingBottom: 5 + insets.bottom,
+        paddingBottom: 5 + insets.bottom + scaleSizeH(PLAYER_BOTTOM_LIFT),
         backgroundColor: theme['c-content-background'],
       }}
       {...swipeUpResponder.panHandlers}

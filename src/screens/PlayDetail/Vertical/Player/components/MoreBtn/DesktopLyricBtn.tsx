@@ -14,6 +14,7 @@ export default memo(() => {
     desktopLyricEnableRef.current?.setEnabled(!enabledLyric)
   }
   const updateLock = () => {
+    if (!enabledLyric) return
     const isLock = !settingState.setting['desktopLyric.isLock']
     void toggleDesktopLyricLock(isLock).then(() => {
       updateSetting({ 'desktopLyric.isLock': isLock })

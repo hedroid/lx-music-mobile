@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import CheckBox from '@/components/common/CheckBox'
 import Text from '@/components/common/Text'
 import { setFontSize } from '@/core/common'
 import { useI18n } from '@/lang'
@@ -9,6 +8,7 @@ import { useFontSize } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { getTextSize } from '@/utils/pixelRatio'
 import SubTitle from '../../components/SubTitle'
+import Select from '../../components/Select'
 
 const LIST = [
   { size: 0.8, name: 'setting_basic_font_size_80' },
@@ -23,6 +23,7 @@ export default memo(() => {
   const theme = useTheme()
   const fontSize = useFontSize()
   const list = useMemo(() => LIST.map(item => ({ ...item, label: t(item.name) })), [t])
+  const options = useMemo(() => list.map(item => ({ action: String(item.size), label: item.label })), [list])
 
   useEffect(() => {
     if (fontSize > 1.2) setFontSize(1.2)
@@ -38,19 +39,7 @@ export default memo(() => {
           {t('setting_basic_font_size_preview')}
         </Text>
       </View>
-      <View style={styles.list}>
-        {list.map(item => (
-          <View key={item.size} style={styles.option}>
-            <CheckBox
-              check={fontSize == item.size}
-              label={item.label}
-              labelNumberOfLines={1}
-              onChange={() => { setFontSize(item.size) }}
-              need
-            />
-          </View>
-        ))}
-      </View>
+      <Select options={options} value={String(fontSize)} onChange={(value) => { setFontSize(Number(value)) }} />
     </SubTitle>
   )
 })
@@ -59,16 +48,5 @@ const styles = StyleSheet.create({
   preview: {
     height: 42,
     justifyContent: 'center',
-  },
-  list: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  option: {
-    flexShrink: 0,
-    minHeight: 42,
-    justifyContent: 'center',
-    marginRight: 18,
-    marginBottom: 4,
   },
 })

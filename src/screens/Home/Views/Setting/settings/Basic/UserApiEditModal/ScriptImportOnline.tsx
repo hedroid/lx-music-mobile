@@ -58,14 +58,9 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const [btn, setBtn] = useState({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
 
   const handleShow = () => {
-    alertRef.current?.setVisible(true)
     setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
-    requestAnimationFrame(() => {
-      urlInputRef.current?.setText('')
-      setTimeout(() => {
-        urlInputRef.current?.focus()
-      }, 300)
-    })
+    urlInputRef.current?.setText('')
+    alertRef.current?.setVisible(true)
   }
   useImperativeHandle(ref, () => ({
     show() {
@@ -85,7 +80,11 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
       url = ''
       urlInputRef.current?.setText('')
     }
-    if (!url.length) return
+    if (!url.length) {
+      toast(t('user_api_import_url_required'))
+      urlInputRef.current?.focus()
+      return
+    }
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
     let script: string
     try {
@@ -100,9 +99,7 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
       toast(t('user_api_import_failed_tip', { message: 'Too large script' }), 'long')
       return
     }
-    void handleImportScript(script)
-
-    alertRef.current?.setVisible(false)
+    if (await handleImportScript(script)) alertRef.current?.setVisible(false)
   }
 
   return (
@@ -138,5 +135,3 @@ const styles = createStyle({
     // paddingBottom: 2,
   },
 })
-
-

@@ -12,6 +12,7 @@ import commonActions from '@/store/common/action'
 import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
+import { initCustomFont } from '@/core/font'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
@@ -34,6 +35,8 @@ export default async() => {
   bootLog('Font size changed.')
   const setting = await initSetting()
   bootLog('Setting inited.')
+  await initCustomFont(setting)
+  bootLog('Custom font inited.')
   // console.log(setting)
 
   await initTheme(setting)

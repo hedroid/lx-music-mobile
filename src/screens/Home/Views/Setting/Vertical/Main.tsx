@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { FlatList, type FlatListProps } from 'react-native'
+import { ScrollView, View } from 'react-native'
 
 import Basic from '../settings/Basic'
 import Player from '../settings/Player'
@@ -7,7 +7,6 @@ import LyricDesktop from '../settings/LyricDesktop'
 import Search from '../settings/Search'
 import List from '../settings/List'
 import Download from '../settings/Download'
-import Sync from '../settings/Sync'
 import WebDAV from '../settings/WebDAV'
 import Backup from '../settings/Backup'
 import Other from '../settings/Other'
@@ -15,9 +14,6 @@ import Version from '../settings/Version'
 import About from '../settings/About'
 import { createStyle } from '@/utils/tools'
 import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
-
-type FlatListType = FlatListProps<SettingScreenIds>
-
 
 const styles = createStyle({
   content: {
@@ -38,7 +34,6 @@ const ListItem = memo(({
     case 'search': return <Search />
     case 'list': return <List />
     case 'download': return <Download />
-    case 'sync': return <Sync />
     case 'webdav': return <WebDAV />
     case 'backup': return <Backup />
     case 'other': return <Other />
@@ -49,21 +44,11 @@ const ListItem = memo(({
 }, () => true)
 
 export default () => {
-  const renderItem: FlatListType['renderItem'] = ({ item }) => <ListItem id={item} />
-  const getkey: FlatListType['keyExtractor'] = item => item
-
   return (
-    <FlatList
-      data={SETTING_SCREENS}
-      keyboardShouldPersistTaps={'always'}
-      renderItem={renderItem}
-      keyExtractor={getkey}
-      contentContainerStyle={styles.content}
-      maxToRenderPerBatch={2}
-      // updateCellsBatchingPeriod={80}
-      windowSize={2}
-      // removeClippedSubviews={true}
-      initialNumToRender={1}
-    />
+    <ScrollView keyboardShouldPersistTaps={'always'}>
+      <View style={styles.content}>
+        {SETTING_SCREENS.map(id => <ListItem key={id} id={id} />)}
+      </View>
+    </ScrollView>
   )
 }

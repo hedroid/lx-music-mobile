@@ -41,10 +41,10 @@ export default forwardRef<DesktopLyricEnableType, {}>((props, ref) => {
       } catch (err) {
         console.log(err)
         handleShowModal()
-        // return false
+        updateSetting({ 'desktopLyric.enable': false })
+        return
       }
     } else await hideDesktopLyric()
-    // return true
     updateSetting({ 'desktopLyric.enable': isEnable })
   }
 

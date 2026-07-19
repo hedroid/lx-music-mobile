@@ -23,6 +23,7 @@ public class Lyric extends LyricPlayer {
   ReactApplicationContext reactAppContext;
 
   boolean isRunPlayer = false;
+  boolean isPlaying = false;
   // String lastText = "LX Music ^-^";
   int lastLine = 0;
   List lines = new ArrayList();
@@ -31,9 +32,15 @@ public class Lyric extends LyricPlayer {
   boolean isShowLyricView = false;
   boolean isSendLyricTextEvent = false;
   boolean isScreenOff = false;
+  boolean isAppInForeground = true;
+  Bundle lyricViewOptions;
   String lyricText = "";
   String translationText = "";
   String romaLyricText = "";
+
+  private void runOnUi(Runnable action) {
+    reactAppContext.runOnUiQueueThread(action);
+  }
 
   Lyric(ReactApplicationContext reactContext, boolean isShowTranslation, boolean isShowRoma, float playbackRate) {
     this.reactAppContext = reactContext;
@@ -116,7 +123,10 @@ public class Lyric extends LyricPlayer {
     isScreenOff = false;
     if (isDisableAutoPause()) return;
     if (lyricView == null) lyricView = new LyricView(reactAppContext, lyricEvent);
-    lyricView.runOnUiThread(() -> {
+    runOnUi(() -> {
+      if (isShowLyricView && !isAppInForeground && lyricViewOptions != null) {
+        lyricView.showLyricView(lyricViewOptions);
+      }
       handleGetCurrentLyric(lastLine);
       setTempPause(false);
     });
@@ -130,7 +140,9 @@ public class Lyric extends LyricPlayer {
 
   private void setCurrentLyric(String lyric, ArrayList<String> extendedLyrics) {
     if (isShowLyricView && !isScreenOff && lyricView != null) {
-      lyricView.setLyric(lyric, extendedLyrics);
+      runOnUi(() -> {
+        if (lyricView != null) lyricView.setLyric(lyric, extendedLyrics);
+      });
     }
     if (isSendLyricTextEvent) {
       WritableMap params = Arguments.createMap();
@@ -163,28 +175,49 @@ public class Lyric extends LyricPlayer {
   }
 
   public void showDesktopLyric(Bundle options, Promise promise) {
-    if (isShowLyricView) return;
-    if (lyricEvent == null) lyricEvent = new LyricEvent(reactAppContext);
-    isShowLyricView = true;
-    if (lyricView == null) lyricView = new LyricView(reactAppContext, lyricEvent);
-    try {
-      lyricView.showLyricView(options);
-    } catch (Exception e) {
-      promise.reject(e);
-      Log.e("Lyric", e.getMessage());
+    if (isShowLyricView) {
+      promise.resolve(null);
       return;
     }
+    if (lyricEvent == null) lyricEvent = new LyricEvent(reactAppContext);
+    isShowLyricView = true;
+    lyricViewOptions = options;
+    if (lyricView == null) lyricView = new LyricView(reactAppContext, lyricEvent);
     isRunPlayer = true;
-    promise.resolve(null);
+    runOnUi(() -> {
+      try {
+        if (!isAppInForeground && lyricView != null) lyricView.showLyricView(options);
+        promise.resolve(null);
+      } catch (Exception e) {
+        isShowLyricView = false;
+        promise.reject(e);
+        Log.e("Lyric", "Unable to show desktop lyric", e);
+      }
+    });
   }
 
   public void hideDesktopLyric() {
     if (!isShowLyricView) return;
     isShowLyricView = false;
     pausePlayer();
-    if (lyricView != null) {
-      lyricView.destroy();
-      lyricView = null;
+    LyricView view = lyricView;
+    lyricView = null;
+    if (view != null) runOnUi(view::destroy);
+    lyricViewOptions = null;
+  }
+
+  public void setAppInForeground(boolean foreground) {
+    isAppInForeground = foreground;
+    if (!isShowLyricView || lyricView == null) return;
+    if (foreground) {
+      runOnUi(() -> { if (lyricView != null) lyricView.destroyView(); });
+    } else if (!isScreenOff && lyricViewOptions != null) {
+      runOnUi(() -> {
+        if (lyricView == null) return;
+        lyricView.showLyricView(lyricViewOptions);
+        lyricView.setPlaying(isPlaying);
+      });
+      handleGetCurrentLyric(lastLine);
     }
   }
 
@@ -221,38 +254,45 @@ public class Lyric extends LyricPlayer {
 
   public void pauseLyric() {
     pause();
+    isPlaying = false;
+    runOnUi(() -> { if (lyricView != null) lyricView.setPlaying(false); });
     if (!isRunPlayer) return;
     handleGetCurrentLyric(-1);
   }
 
+  public void setPlaying(boolean playing) {
+    isPlaying = playing;
+    runOnUi(() -> { if (lyricView != null) lyricView.setPlaying(playing); });
+  }
+
   public void lockLyric() {
     if (lyricView == null) return;
-    lyricView.lockView();
+    runOnUi(() -> { if (lyricView != null) lyricView.lockView(); });
   }
 
   public void unlockLyric() {
     if (lyricView == null) return;
-    lyricView.unlockView();
+    runOnUi(() -> { if (lyricView != null) lyricView.unlockView(); });
   }
 
   public void setMaxLineNum(int maxLineNum) {
     if (lyricView == null) return;
-    lyricView.setMaxLineNum(maxLineNum);
+    runOnUi(() -> { if (lyricView != null) lyricView.setMaxLineNum(maxLineNum); });
   }
 
   public void setWidth(int width) {
     if (lyricView == null) return;
-    lyricView.setWidth(width);
+    runOnUi(() -> { if (lyricView != null) lyricView.setWidth(width); });
   }
 
   public void setSingleLine(boolean singleLine) {
     if (lyricView == null) return;
-    lyricView.setSingleLine(singleLine);
+    runOnUi(() -> { if (lyricView != null) lyricView.setSingleLine(singleLine); });
   }
 
   public void setShowToggleAnima(boolean showToggleAnima) {
     if (lyricView == null) return;
-    lyricView.setShowToggleAnima(showToggleAnima);
+    runOnUi(() -> { if (lyricView != null) lyricView.setShowToggleAnima(showToggleAnima); });
   }
 
   public void toggleTranslation(boolean isShowTranslation) {
@@ -267,21 +307,21 @@ public class Lyric extends LyricPlayer {
 
   public void setPlayedColor(String unplayColor, String playedColor, String shadowColor) {
     if (lyricView == null) return;
-    lyricView.setColor(unplayColor, playedColor, shadowColor);
+    runOnUi(() -> { if (lyricView != null) lyricView.setColor(unplayColor, playedColor, shadowColor); });
   }
 
   public void setAlpha(float alpha) {
     if (lyricView == null) return;
-    lyricView.setAlpha(alpha);
+    runOnUi(() -> { if (lyricView != null) lyricView.setAlpha(alpha); });
   }
 
   public void setTextSize(float size) {
     if (lyricView == null) return;
-    lyricView.setTextSize(size);
+    runOnUi(() -> { if (lyricView != null) lyricView.setTextSize(size); });
   }
 
   public void setLyricTextPosition(String positionX, String positionY) {
     if (lyricView == null) return;
-    lyricView.setLyricTextPosition(positionX, positionY);
+    runOnUi(() -> { if (lyricView != null) lyricView.setLyricTextPosition(positionX, positionY); });
   }
 }

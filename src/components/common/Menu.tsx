@@ -2,7 +2,7 @@ import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } 
 import { View, Animated, TouchableHighlight } from 'react-native'
 import { useWindowSize } from '@/utils/hooks'
 
-import Modal, { type ModalType } from './Modal'
+import Modal, { type ModalProps, type ModalType } from './Modal'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -132,8 +132,9 @@ const Menu = ({
 
   const menuPress = (menu: Menus[number]) => {
     // if (menu.disabled) return
-    onPress(menu)
     onHide()
+    // Close the native modal before a language change can remount the settings tree.
+    requestAnimationFrame(() => { onPress(menu) })
   }
 
   // console.log('render menu')
@@ -190,6 +191,7 @@ export interface MenuProps<M extends Menus = Menus> {
   fontSize?: number
   center?: boolean
   activeId?: M[number]['action'] | null
+  animationType?: ModalProps['animationType']
 }
 
 export interface MenuType {
@@ -197,7 +199,7 @@ export interface MenuType {
   hide: () => void
 }
 
-const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center }: MenuProps<M>, ref: Ref<MenuType>) => {
+const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center, animationType }: MenuProps<M>, ref: Ref<MenuType>) => {
   // console.log(visible)
   const modalRef = useRef<ModalType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
@@ -217,7 +219,7 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
   }))
 
   return (
-    <Modal onHide={onHide} ref={modalRef}>
+    <Modal animationType={animationType ?? 'fade'} onHide={onHide} ref={modalRef}>
       <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
     </Modal>
   )

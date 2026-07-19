@@ -8,5 +8,5 @@ export default () => {
   const playInfo = usePlayMusicInfo()
   const item = playInfo.musicInfo
   const musicInfo = item && !('progress' in item) && item.source != 'local' ? item : null
-  return <Btn materialIcon="download-outline" materialIconSize={24} color={musicInfo ? undefined : theme['c-250']} onPress={() => { if (musicInfo) void startDownload(musicInfo) }} />
+  return <Btn materialIcon="download" color={musicInfo ? undefined : theme['c-250']} onPress={() => { if (musicInfo) void startDownload(musicInfo) }} />
 }

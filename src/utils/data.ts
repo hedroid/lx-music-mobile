@@ -576,6 +576,16 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
 
   let scriptInfo = matchInfo(result[0])
 
+  const normalizedScript = script.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim()
+  const storedScripts = await Promise.all(userApis.map(async api => getUserApiScript(api.id)))
+  const hasSameScript = storedScripts.some(storedScript => (
+    storedScript.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim() == normalizedScript
+  ))
+  const hasSameSource = userApis.some(api => {
+    return !!scriptInfo.name && !!scriptInfo.homepage && scriptInfo.name == api.name && scriptInfo.homepage == api.homepage
+  })
+  if (hasSameScript || hasSameSource) throw new Error(global.i18n.t('user_api_duplicate_tip'))
+
   scriptInfo.name ||= `user_api_${new Date().toLocaleString()}`
   const apiInfo: LX.UserApi.UserApiInfo = {
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,

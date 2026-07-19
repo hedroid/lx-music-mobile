@@ -17,11 +17,17 @@ import cn.toside.music.mobile.utils.UtilsPackage;
 
 public class MainApplication extends NavigationApplication {
 
+  @Override
+  public void onCreate() {
+    CrashLogger.install(this);
+    super.onCreate();
+  }
+
   private final ReactNativeHost mReactNativeHost =
       new NavigationReactNativeHost(this) {
         @Override
         public boolean getUseDeveloperSupport() {
-          return BuildConfig.DEBUG;
+          return BuildConfig.USE_DEVELOPER_SUPPORT;
         }
 
         @Override

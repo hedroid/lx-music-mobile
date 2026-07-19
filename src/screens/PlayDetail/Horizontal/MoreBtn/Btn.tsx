@@ -5,7 +5,7 @@ import { useTheme } from '@/store/theme/hook'
 import { scaleSizeW } from '@/utils/pixelRatio'
 
 export const BTN_WIDTH = scaleSizeW(32)
-export const BTN_ICON_SIZE = 22
+export const BTN_ICON_SIZE = 24
 
 export default ({ icon, materialIcon, materialIconSize = BTN_ICON_SIZE, color, onPress }: {
   icon?: string

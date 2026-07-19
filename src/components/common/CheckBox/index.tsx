@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 import CheckBox from './Checkbox'
 
-import { createStyle, tipDialog } from '@/utils/tools'
+import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
+import { createStyle } from '@/utils/tools'
 import { scaleSizeH, scaleSizeW, setSpText } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import Text from '../Text'
@@ -26,6 +27,7 @@ export interface CheckBoxProps {
 
 export default ({ check, label, children, onChange, helpTitle, helpDesc, disabled = false, need = false, marginRight = 0, marginBottom = 0, size = 1, labelNumberOfLines }: CheckBoxProps) => {
   const theme = useTheme()
+  const helpAlertRef = useRef<ConfirmAlertType>(null)
   const [isDisabled, setDisabled] = useState(false)
   const tintColors = {
     true: theme['c-primary'],
@@ -55,11 +57,7 @@ export default ({ check, label, children, onChange, helpTitle, helpDesc, disable
 
   const helpComponent = useMemo(() => {
     const handleShowHelp = () => {
-      void tipDialog({
-        title: helpTitle ?? '',
-        message: helpDesc,
-        btnText: global.i18n.t('understand'),
-      })
+      helpAlertRef.current?.setVisible(true)
     }
     return (helpTitle ?? helpDesc) ? (
       <TouchableOpacity style={styles.helpBtn} onPress={handleShowHelp}>
@@ -70,17 +68,24 @@ export default ({ check, label, children, onChange, helpTitle, helpDesc, disable
 
 
   const fontSizeScale = Math.min(Math.max(global.lx.fontSize, 0.8), 1.2)
-  const controlHeight = Math.max(32 * size * fontSizeScale, setSpText(24 * size))
+  const textLineHeight = setSpText(22 * size)
+  const controlHeight = Math.max(32 * size * fontSizeScale, textLineHeight + 8 * size)
   const preventLabelWrap = labelNumberOfLines === 1
+  const needsCjkBaselineCorrection = global.lx.fontSize === 1 && !!label && /[\u3400-\u9fff\uf900-\ufaff]/.test(label)
   const contentStyle = { ...styles.content, flexShrink: preventLabelWrap ? 0 : 1, minHeight: controlHeight, marginBottom: scaleSizeH(marginBottom) }
   const labelStyle = { ...styles.label, flexShrink: preventLabelWrap ? 0 : 1, minHeight: controlHeight, marginRight: scaleSizeW(marginRight) }
   const nameStyle = {
     ...styles.name,
-    lineHeight: setSpText(26 * size),
+    lineHeight: textLineHeight,
+    // Keep the transform value as an array across language changes. Clearing a
+    // Text transform to null trips RN's Fabric style diffing on Android and can
+    // unmount the whole screen when switching from CJK to English.
+    transform: [{ translateY: needsCjkBaselineCorrection ? -1 : 0 }],
   }
 
   return (
-    disabled
+    <>
+      {disabled
       ? (
           <View style={contentStyle}>
             <CheckBox status={check ? 'checked' : 'unchecked'} disabled={true} tintColors={disabledTintColors} size={size} />
@@ -96,7 +101,19 @@ export default ({ check, label, children, onChange, helpTitle, helpDesc, disable
             </TouchableOpacity>
             {helpComponent}
           </View>
-        )
+        )}
+      {(helpTitle ?? helpDesc)
+        ? (
+            <ConfirmAlert
+              ref={helpAlertRef}
+              title={helpTitle ?? ''}
+              text={helpDesc ?? ''}
+              cancelText={global.i18n.t('understand')}
+              showConfirm={false}
+            />
+          )
+        : null}
+    </>
   )
 }
 
@@ -123,7 +140,7 @@ const styles = createStyle({
     paddingRight: 3,
   },
   name: {
-    includeFontPadding: true,
+    includeFontPadding: false,
     textAlignVertical: 'center',
   },
   helpBtn: {

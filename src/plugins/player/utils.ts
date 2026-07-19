@@ -269,6 +269,7 @@ const defaultUpdateOptions: UpdateOptions = {
     Capability.Play,
     Capability.Pause,
     Capability.Stop,
+    Capability.SeekTo,
     Capability.SkipToNext,
     Capability.SkipToPrevious,
   ],

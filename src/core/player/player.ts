@@ -29,6 +29,7 @@ import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
 import { resetCurrentPlaylist } from './currentPlaylist'
+import { existsFile } from '@/utils/fs'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -96,8 +97,13 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
 }
 const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
-  setStatusText(global.i18n.t('player__getting_url'))
-  addLoadTimeout()
+  const isAvailableDownload = 'progress' in musicInfo && await existsFile(musicInfo.metadata.filePath)
+  if (isAvailableDownload) {
+    setStatusText('')
+  } else {
+    setStatusText(global.i18n.t('player__getting_url'))
+    addLoadTimeout()
+  }
 
   // const type = getPlayType(settingState.setting['player.isPlayHighQuality'], musicInfo)
   // Downloaded items must try their local file first. Their nested online

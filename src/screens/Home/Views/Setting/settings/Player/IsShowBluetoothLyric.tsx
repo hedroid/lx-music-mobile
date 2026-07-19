@@ -7,10 +7,7 @@ import { useSettingValue } from '@/store/setting/hook'
 
 
 import CheckBoxItem from '../../components/CheckBoxItem'
-import { showRemoteLyric } from '@/core/desktopLyric'
-import { setLastLyric } from '@/core/player/playInfo'
-import { updateNowPlayingTitles } from '@/plugins/player/utils'
-import playerState from '@/store/player/state'
+import { syncNowPlayingLyric } from '@/core/player/nowPlayingLyric'
 
 export default memo(() => {
   const t = useI18n()
@@ -20,15 +17,7 @@ export default memo(() => {
       await remoteLyricTip()
     }
     updateSetting({ 'player.isShowBluetoothLyric': isShowBluetoothLyric })
-    void showRemoteLyric(isShowBluetoothLyric)
-    if (!isShowBluetoothLyric) {
-      setLastLyric()
-      void updateNowPlayingTitles({
-        title: playerState.musicInfo.name,
-        artist: playerState.musicInfo.singer ?? '',
-        album: playerState.musicInfo.album ?? '',
-      })
-    }
+    void syncNowPlayingLyric()
   }
 
   return (
@@ -44,4 +33,3 @@ const styles = createStyle({
     marginTop: 5,
   },
 })
-

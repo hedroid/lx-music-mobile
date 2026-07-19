@@ -17,6 +17,7 @@ import type { SettingScreenIds } from '@/screens/Home/Views/Setting'
 // }
 interface GlobalData {
   fontSize: number
+  customFontFamily: string | null
   gettingUrlId: string
 
   // event_app: AppType

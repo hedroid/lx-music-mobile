@@ -1,5 +1,8 @@
 export const HEADER_HEIGHT = 42
 export const LIST_ITEM_HEIGHT = 54
+// Keep playback controls clear of rounded corners and gesture areas on devices
+// that report little or no bottom safe-area inset.
+export const PLAYER_BOTTOM_LIFT = 8
 export const LIST_SCROLL_POSITION_KEY = '__LIST_SCROLL_POSITION_KEY__'
 
 export const SPLIT_CHAR = {
@@ -150,7 +153,7 @@ export const DEFAULT_SETTING = {
   },
 
   viewPrevState: {
-    id: 'nav_search' as NAV_ID_Type,
+    id: 'nav_songlist' as NAV_ID_Type,
     // query: {},
   },
 }

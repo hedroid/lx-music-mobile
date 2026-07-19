@@ -6,6 +6,12 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.0](https://github.com/hedroid/lx-music-mobile/compare/v2.0.0...v2.1.0) - 2026-07-19
+
+### 优化
+
+- 强迫症修改 UI 细节。
+
 ## [2.0.0](https://github.com/hedroid/lx-music-mobile/compare/v1.8.4...v2.0.0) - 2026-07-18
 
 ### 新增

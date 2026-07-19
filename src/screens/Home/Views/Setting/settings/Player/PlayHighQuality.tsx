@@ -1,53 +1,41 @@
 import { memo, useMemo } from 'react'
 
-import { StyleSheet, View } from 'react-native'
-
 import SubTitle from '../../components/SubTitle'
-import CheckBox from '@/components/common/CheckBox'
 import { useSettingValue } from '@/store/setting/hook'
 import { updateSetting } from '@/core/common'
 import { useI18n } from '@/lang'
 import { TRY_QUALITYS_LIST } from '@/core/music/utils'
-
-const useActive = (id: LX.Quality) => {
-  const q = useSettingValue('player.playQuality')
-  const isActive = useMemo(() => q == id, [q, id])
-  return isActive
-}
-
-const Item = ({ id, name }: {
-  id: LX.Quality
-  name: string
-}) => {
-  const isActive = useActive(id)
-  // const [toggleCheckBox, setToggleCheckBox] = useState(false)
-  return <CheckBox marginRight={8} check={isActive} label={name} onChange={() => { updateSetting({ 'player.playQuality': id }) }} need />
-}
+import Select from '../../components/Select'
 
 export default memo(() => {
   const t = useI18n()
   const playQualityList = useMemo(() => {
     return [...TRY_QUALITYS_LIST, '128k'].reverse() as LX.Quality[]
   }, [])
+  const playQuality = useSettingValue('player.playQuality')
+  const options = useMemo(() => playQualityList.map(quality => {
+    let label: string
+    switch (quality) {
+      case '128k': label = t('quality_option_128k'); break
+      case '192k': label = t('quality_option_192k'); break
+      case '320k': label = t('quality_option_320k'); break
+      case 'flac24bit': label = t('quality_option_flac24bit'); break
+      default: label = t('quality_option_flac'); break
+    }
+    return { action: quality, label }
+  }), [playQualityList, t])
+  const displayPlayQuality = playQuality == 'ape' || playQuality == 'wav' ? 'flac' : playQuality
 
   return (
     <SubTitle title={t('setting_play_play_quality')}>
-      <View style={styles.list}>
-        {
-          playQualityList.map((q) => <Item name={q} id={q} key={q} />)
-        }
-      </View>
+      <Select
+        options={options}
+        value={displayPlayQuality}
+        onChange={(quality) => { updateSetting({ 'player.playQuality': quality }) }}
+      />
     </SubTitle>
   )
 })
-
-const styles = StyleSheet.create({
-  list: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-})
-
 
 // export default memo(() => {
 //   const t = useI18n()
@@ -69,4 +57,3 @@ const styles = StyleSheet.create({
 //     marginTop: 5,
 //   },
 // })
-

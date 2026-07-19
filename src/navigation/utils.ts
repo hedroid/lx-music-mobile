@@ -3,8 +3,11 @@ import {
   VERSION_MODAL,
   PACT_MODAL,
   SYNC_MODE_MODAL,
+  DOWNLOAD_QUALITY_MODAL,
 } from './screenNames'
 import themeState from '@/store/theme/state'
+
+let downloadQualityResolver: ((quality: LX.Quality | null) => void) | null = null
 
 
 export const getStatusBarStyle = (isDark: boolean) => isDark ? 'light' : 'dark'
@@ -160,6 +163,39 @@ export const showSyncModeModal = () => {
       },
     },
   })
+}
+
+export const showDownloadQualityModal = async(preferred: LX.Quality, qualityList: LX.Quality[]) => new Promise<LX.Quality | null>(resolve => {
+  downloadQualityResolver?.(null)
+  downloadQualityResolver = resolve
+  const theme = themeState.theme
+
+  void Navigation.showOverlay({
+    component: {
+      name: DOWNLOAD_QUALITY_MODAL,
+      passProps: { preferred, qualityList },
+      options: {
+        layout: { componentBackgroundColor: 'transparent' },
+        overlay: { interceptTouchOutside: true },
+        statusBar: {
+          drawBehind: true,
+          visible: true,
+          style: getStatusBarStyle(theme.isDark),
+          backgroundColor: 'transparent',
+        },
+        navigationBar: { backgroundColor: theme['c-content-background'] },
+      },
+    },
+  }).catch(() => {
+    if (downloadQualityResolver == resolve) downloadQualityResolver = null
+    resolve(null)
+  })
+})
+
+export const resolveDownloadQualityModal = (quality: LX.Quality | null) => {
+  const resolve = downloadQualityResolver
+  downloadQualityResolver = null
+  resolve?.(quality)
 }
 
 // export const showToast = (text) => {

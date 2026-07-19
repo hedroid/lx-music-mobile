@@ -12,6 +12,7 @@ import { toast } from '@/utils/tools'
 import { refreshDownloadConcurrency } from '@/core/download'
 import Button from '../../components/Button'
 import Section from '../../components/Section'
+import Select from '../../components/Select'
 import SliderRow from '../../components/SliderRow'
 import SubTitle from '../../components/SubTitle'
 
@@ -35,29 +36,21 @@ const Toggle = ({ settingKey, label, disabled = false }: {
   )
 }
 
-const FileNameOption = ({ value, label }: { value: FileNameFormat, label: string }) => {
-  const currentValue = useSettingValue('download.fileName')
-  return (
-    <CheckBox
-      check={currentValue == value}
-      label={label}
-      marginRight={12}
-      marginBottom={8}
-      need
-      onChange={() => { updateSetting({ 'download.fileName': value }) }}
-    />
-  )
-}
-
 export default memo(() => {
   const t = useI18n()
   const writeLyric = useSettingValue('download.writeLyric')
   const writeEmbedLyric = useSettingValue('download.writeEmbedLyric')
   const savePath = useSettingValue('download.savePath')
   const concurrentCountSetting = useSettingValue('download.concurrentCount')
+  const fileName = useSettingValue('download.fileName')
   const [concurrentCount, setConcurrentCount] = useState(concurrentCountSetting)
   const defaultPath = `${RNFS.ExternalDirectoryPath}/lx-music`
   const displayPath = formatStoragePath(savePath || defaultPath, t('setting_download_storage_internal'))
+  const fileNameOptions: Readonly<Array<{ action: FileNameFormat, label: string }>> = [
+    { action: '歌名 - 歌手', label: t('setting_download_file_name_song_singer') },
+    { action: '歌手 - 歌名', label: t('setting_download_file_name_singer_song') },
+    { action: '歌名', label: t('setting_download_file_name_song') },
+  ]
   const handleSelectPath = async() => {
     try {
       const folder = await selectManagedFolder(true)
@@ -106,11 +99,11 @@ export default memo(() => {
       </SubTitle>
 
       <SubTitle title={t('setting_download_file_name')}>
-        <View style={styles.row}>
-          <FileNameOption value="歌名 - 歌手" label={t('setting_download_file_name_song_singer')} />
-          <FileNameOption value="歌手 - 歌名" label={t('setting_download_file_name_singer_song')} />
-          <FileNameOption value="歌名" label={t('setting_download_file_name_song')} />
-        </View>
+        <Select
+          options={fileNameOptions}
+          value={fileName}
+          onChange={(value) => { updateSetting({ 'download.fileName': value }) }}
+        />
       </SubTitle>
 
       <SubTitle title={t('setting_download_file_content')}>
@@ -137,10 +130,6 @@ const styles = StyleSheet.create({
   },
   pathActions: {
     marginTop: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },

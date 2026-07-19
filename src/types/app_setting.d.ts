@@ -16,6 +16,15 @@ declare global {
        */
       'common.langId': I18n['locale'] | null
 
+      /** 自定义界面字体文件路径 */
+      'common.customFontPath': string
+
+      /** 自定义界面字体原始文件名 */
+      'common.customFontName': string
+
+      /** 当前界面字体族，空字符串表示系统默认 */
+      'common.fontFamily': string
+
       /**
        * api id
        */
@@ -200,6 +209,11 @@ declare global {
        * 是否启用蓝牙完整歌词
        */
       'player.isShowBluetoothFullLyric': boolean
+
+      /**
+       * 是否在系统音乐胶囊中滚动显示当前歌词
+       */
+      'player.isShowMusicCapsuleLyric': boolean
 
       /**
        * 播放详情页-是否缩放当前播放的歌词行

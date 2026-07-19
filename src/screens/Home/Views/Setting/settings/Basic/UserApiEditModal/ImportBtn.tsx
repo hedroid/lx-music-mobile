@@ -48,15 +48,18 @@ export default ({ btnStyle }: BtnProps) => {
 
 
   return (
-    <DorpDownMenu
-      btnStyle={btnStyle}
-      menus={importTypes}
-      center
-      onPress={handleAction}
-    >
-      <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import')}</Text>
+    <>
+      <DorpDownMenu
+        btnStyle={btnStyle}
+        menus={importTypes}
+        center
+        animationType="none"
+        onPress={handleAction}
+      >
+        <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import')}</Text>
+      </DorpDownMenu>
       <ScriptImportExport ref={scriptImportExportRef} />
       <ScriptImportOnline ref={scriptImportOnlineRef} />
-    </DorpDownMenu>
+    </>
   )
 }

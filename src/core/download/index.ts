@@ -3,6 +3,7 @@ import RNFS from 'react-native-fs'
 import { getLyricInfo, getMusicUrl, getPicPath } from '@/core/music'
 import { getPlayQuality } from '@/core/music/utils'
 import { updateSetting } from '@/core/common'
+import { showDownloadQualityModal } from '@/navigation'
 import settingState from '@/store/setting/state'
 import downloadActions from '@/store/download/action'
 import downloadState from '@/store/download/state'
@@ -262,10 +263,34 @@ const getExt = (quality: LX.Quality): LX.Download.FileExt => {
   }
 }
 
-const getQuality = (musicInfo: LX.Music.MusicInfoOnline) => {
-  const preferred = settingState.setting['player.playQuality']
-  if (musicInfo.meta._qualitys[preferred]) return preferred
-  return getPlayQuality(preferred, musicInfo)
+const DOWNLOAD_QUALITYS: LX.Quality[] = ['128k', '192k', '320k', 'flac', 'flac24bit']
+
+const isQualityAvailable = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality) => {
+  const sourceQualitys = global.lx.qualityList[musicInfo.source]
+  const candidates: LX.Quality[] = quality == 'flac' ? ['flac', 'wav', 'ape'] : [quality]
+  return candidates.some(candidate => (
+    !!musicInfo.meta._qualitys[candidate] && (!sourceQualitys || sourceQualitys.includes(candidate))
+  ))
+}
+
+const normalizeDisplayQuality = (quality: LX.Quality): LX.Quality => quality == 'wav' || quality == 'ape' ? 'flac' : quality
+
+const getDefaultDownloadQuality = (preferred: LX.Quality, available: LX.Quality[]) => {
+  const normalizedPreferred = normalizeDisplayQuality(preferred)
+  const fallbackMap: Partial<Record<LX.Quality, LX.Quality[]>> = {
+    flac24bit: ['flac24bit', 'flac', '320k', '192k', '128k'],
+    flac: ['flac', '320k', '192k', '128k'],
+    '320k': ['320k', '192k', '128k'],
+    '192k': ['192k', '128k'],
+    '128k': ['128k'],
+  }
+  return fallbackMap[normalizedPreferred]?.find(quality => available.includes(quality)) ?? available[0] ?? '128k'
+}
+
+const selectDownloadQuality = async(list: LX.Music.MusicInfoOnline[]) => {
+  const available = DOWNLOAD_QUALITYS.filter(quality => list.some(musicInfo => isQualityAvailable(musicInfo, quality)))
+  const preferred = getDefaultDownloadQuality(settingState.setting['player.playQuality'], available)
+  return showDownloadQualityModal(preferred, available)
 }
 
 const normalizeMusicIdentity = (value: string | number | undefined | null) => String(value ?? '')
@@ -323,10 +348,10 @@ export const getDownloadPlayerList = () => downloadState.list.filter(task => tas
 
 type DuplicateAction = 'ask' | 'skip' | 'overwrite'
 
-const getDownloadId = (musicInfo: LX.Music.MusicInfoOnline) => `${musicInfo.id}_${getQuality(musicInfo)}`
+const getDownloadId = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality) => `${musicInfo.id}_${quality}`
 
-const isDownloaded = async(musicInfo: LX.Music.MusicInfoOnline) => {
-  const existed = downloadState.list.find(item => item.id == getDownloadId(musicInfo))
+const isDownloaded = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality) => {
+  const existed = downloadState.list.find(item => item.id == getDownloadId(musicInfo, quality))
   return existed?.status == 'completed' && await existsFile(existed.metadata.filePath)
 }
 
@@ -341,25 +366,36 @@ const confirmDuplicateDownload = async(count: number) => confirmDialog({
 export const startDownloads = async(list: LX.Music.MusicInfoOnline[]) => {
   if (!list.length) return
   await initDownload()
+  const preferred = await selectDownloadQuality(list)
+  if (!preferred) return
+
+  const qualityMap = new Map(list.map(musicInfo => [musicInfo, getPlayQuality(preferred, musicInfo)]))
 
   const duplicatedIds = new Set<string>()
   for (const musicInfo of list) {
-    if (await isDownloaded(musicInfo)) duplicatedIds.add(getDownloadId(musicInfo))
+    const quality = qualityMap.get(musicInfo)!
+    if (await isDownloaded(musicInfo, quality)) duplicatedIds.add(getDownloadId(musicInfo, quality))
   }
 
   const duplicateAction: DuplicateAction = duplicatedIds.size && await confirmDuplicateDownload(duplicatedIds.size)
     ? 'overwrite'
     : 'skip'
   for (const musicInfo of list) {
-    const action = duplicatedIds.has(getDownloadId(musicInfo)) ? duplicateAction : 'skip'
-    void startDownload(musicInfo, action)
+    const quality = qualityMap.get(musicInfo)!
+    const action = duplicatedIds.has(getDownloadId(musicInfo, quality)) ? duplicateAction : 'skip'
+    void enqueueDownload(musicInfo, quality, action)
   }
 }
 
 export const startDownload = async(musicInfo: LX.Music.MusicInfoOnline, duplicateAction: DuplicateAction = 'ask') => {
+  const preferred = await selectDownloadQuality([musicInfo])
+  if (!preferred) return
+  return enqueueDownload(musicInfo, getPlayQuality(preferred, musicInfo), duplicateAction)
+}
+
+const enqueueDownload = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, duplicateAction: DuplicateAction = 'ask') => {
   await initDownload()
-  const quality = getQuality(musicInfo)
-  const id = getDownloadId(musicInfo)
+  const id = getDownloadId(musicInfo, quality)
   const existed = downloadState.list.find(item => item.id == id)
   if (existed?.status == 'completed' && await existsFile(existed.metadata.filePath)) {
     if (duplicateAction == 'skip') return
@@ -504,8 +540,9 @@ export const retryDownload = async(id: string) => {
   const task = downloadState.list.find(item => item.id == id)
   if (!task) return
   const musicInfo = task.metadata.musicInfo
+  const quality = task.metadata.quality
   downloadActions.remove(id)
-  await startDownload(musicInfo)
+  await enqueueDownload(musicInfo, quality)
 }
 
 export const removeDownload = async(id: string, removeFile = true) => {

@@ -1,26 +1,16 @@
 import { init as initLyricPlayer, toggleTranslation, toggleRoma, play, pause, stop, setLyric, setPlaybackRate } from '@/core/lyric'
 import { updateSetting } from '@/core/common'
-import { onDesktopLyricPositionChange, showDesktopLyric, onLyricLinePlay, showRemoteLyric } from '@/core/desktopLyric'
+import {
+  hideDesktopLyric,
+  onDesktopLyricAction,
+  onDesktopLyricPositionChange,
+  onLyricLinePlay,
+  showDesktopLyric,
+  showRemoteLyric,
+} from '@/core/desktopLyric'
 import playerState from '@/store/player/state'
-import { updateNowPlayingTitles } from '@/plugins/player/utils'
-import { setLastLyric } from '@/core/player/playInfo'
-
-const updateRemoteLyric = async(lrc?: string) => {
-  setLastLyric(lrc)
-  if (lrc == null) {
-    void updateNowPlayingTitles({
-      title: playerState.musicInfo.name,
-      artist: playerState.musicInfo.singer ?? '',
-      album: playerState.musicInfo.album ?? '',
-    })
-  } else {
-    void updateNowPlayingTitles({
-      title: lrc,
-      artist: `${playerState.musicInfo.name}${playerState.musicInfo.singer ? ` - ${playerState.musicInfo.singer}` : ''}`,
-      album: playerState.musicInfo.album ?? '',
-    })
-  }
-}
+import { updateNowPlayingLyric } from '@/core/player/nowPlayingLyric'
+import { playNext, playPrev, togglePlay } from '@/core/player/player'
 
 export default async(setting: LX.AppSetting) => {
   await initLyricPlayer()
@@ -35,9 +25,10 @@ export default async(setting: LX.AppSetting) => {
       updateSetting({ 'desktopLyric.enable': false })
     })
   }
-  if (setting['player.isShowBluetoothLyric']) {
+  if (setting['player.isShowBluetoothLyric'] || setting['player.isShowMusicCapsuleLyric']) {
     showRemoteLyric(true).catch(() => {
       updateSetting({ 'player.isShowBluetoothLyric': false })
+      updateSetting({ 'player.isShowMusicCapsuleLyric': false })
     })
   }
   onDesktopLyricPositionChange(position => {
@@ -46,11 +37,39 @@ export default async(setting: LX.AppSetting) => {
       'desktopLyric.position.y': position.y,
     })
   })
+  onDesktopLyricAction(({ action, value }) => {
+    switch (action) {
+      case 'close':
+        updateSetting({ 'desktopLyric.enable': false })
+        void hideDesktopLyric()
+        break
+      case 'lock':
+        updateSetting({ 'desktopLyric.isLock': value == null ? true : value == 'true' })
+        break
+      case 'previous':
+        void playPrev()
+        break
+      case 'togglePlay':
+        togglePlay()
+        break
+      case 'next':
+        void playNext()
+        break
+      case 'color':
+        if (value) updateSetting({ 'desktopLyric.style.lyricPlayedColor': value })
+        break
+      case 'fontSize': {
+        const fontSize = Number(value)
+        if (Number.isFinite(fontSize)) updateSetting({ 'desktopLyric.style.fontSize': fontSize })
+        break
+      }
+    }
+  })
   onLyricLinePlay(({ text, extendedLyrics }) => {
     if (!text && !playerState.isPlay) {
-      void updateRemoteLyric()
+      void updateNowPlayingLyric()
     } else {
-      void updateRemoteLyric(text)
+      void updateNowPlayingLyric(text)
     }
   })
 

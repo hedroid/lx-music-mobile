@@ -241,3 +241,19 @@ export const onLyricLinePlay = (handler: (lineInfo: { text: string, extendedLyri
   }
 }
 
+export interface DesktopLyricAction {
+  action: 'close' | 'lock' | 'previous' | 'togglePlay' | 'next' | 'color' | 'fontSize'
+  value?: string
+}
+
+export const onDesktopLyricAction = (handler: (action: DesktopLyricAction) => void): () => void => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  const eventEmitter = new NativeEventEmitter(LyricModule)
+  const eventListener = eventEmitter.addListener('desktop-lyric-action', event => {
+    handler(event as DesktopLyricAction)
+  })
+
+  return () => {
+    eventListener.remove()
+  }
+}

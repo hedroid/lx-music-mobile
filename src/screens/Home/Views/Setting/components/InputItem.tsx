@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react'
 
-import { StyleSheet, View, Keyboard } from 'react-native'
+import { StyleSheet, View, Keyboard, type StyleProp, type ViewStyle } from 'react-native'
 import type { InputType, InputProps } from '@/components/common/Input'
 import Input from '@/components/common/Input'
 import { useTheme } from '@/store/theme/hook'
@@ -12,9 +12,10 @@ export interface InputItemProps extends InputProps {
   label: string
   onChanged: (text: string, callback: (vlaue: string) => void) => void
   inline?: boolean
+  containerStyle?: StyleProp<ViewStyle>
 }
 
-export default memo(({ value, label, onChanged, inline = false, ...props }: InputItemProps) => {
+export default memo(({ value, label, onChanged, inline = false, containerStyle, ...props }: InputItemProps) => {
   const [text, setText] = useState(value)
   const textRef = useRef(value)
   const isMountRef = useRef(false)
@@ -63,7 +64,7 @@ export default memo(({ value, label, onChanged, inline = false, ...props }: Inpu
     textRef.current = text
   }
   return (
-    <View style={inline ? { ...styles.container, ...styles.inlineContainer } : styles.container}>
+    <View style={[styles.container, inline ? styles.inlineContainer : null, containerStyle]}>
       <Text style={inline ? { ...styles.label, ...styles.inlineLabel } : styles.label} size={14} numberOfLines={inline ? 1 : undefined}>{label}</Text>
       <Input
         value={text}

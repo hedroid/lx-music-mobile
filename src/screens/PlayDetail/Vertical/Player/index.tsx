@@ -6,14 +6,14 @@ import MoreBtn from './components/MoreBtn'
 import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
-import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
+import { NAV_SHEAR_NATIVE_IDS, PLAYER_BOTTOM_LIFT } from '@/config/constant'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { scaleSizeH } from '@/utils/pixelRatio'
 
 
 export default memo(() => {
   const insets = useSafeAreaInsets()
-  const bottomPadding = Math.max(scaleSizeH(22), insets.bottom + scaleSizeH(4))
+  const bottomPadding = Math.max(scaleSizeH(22), insets.bottom + scaleSizeH(4)) + scaleSizeH(PLAYER_BOTTOM_LIFT)
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_player}>
       <PlayInfo />
